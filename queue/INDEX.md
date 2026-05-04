@@ -14,7 +14,7 @@ within each section. Mark status next to each.
 | `auth logout` + `switch` | done | [`W0-mvp-auth-list/P4-auth-logout-switch/README.md`](W0-mvp-auth-list/P4-auth-logout-switch/README.md) |
 | `list --from --to` | done | [`W0-mvp-auth-list/P5-list-range/README.md`](W0-mvp-auth-list/P5-list-range/README.md) |
 | `list --format json/tsv/csv/raw` | done | [`W0-mvp-auth-list/P6-list-json/README.md`](W0-mvp-auth-list/P6-list-json/README.md) |
-| `calendars list` | pending | [`W0-mvp-auth-list/P7-calendars-list/README.md`](W0-mvp-auth-list/P7-calendars-list/README.md) |
+| `calendars list` | done | [`W0-mvp-auth-list/P7-calendars-list/README.md`](W0-mvp-auth-list/P7-calendars-list/README.md) |
 
 ## Polish path (W1)
 

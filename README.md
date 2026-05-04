@@ -18,21 +18,19 @@ without leaving your terminal.
 
 ## Status (2026-05-04)
 
-**Shipped on `main`:**
-- Custom Google Cloud OAuth client (env vars / file / `~/.gcal/secret.json`).
+**Shipped on `main` (W0 MVP done):**
+- Custom Google Cloud OAuth client (env vars / file / `~/.gcal/profiles/<name>/secret.json`).
 - `GCAL_VERBOSE=1` source logging.
-- `add`, `list` (current week), top-level quick-add.
-- Conference (Google Meet) support on event create.
+- Multi-profile auth: `gcal auth login/status/logout/switch [--profile <name>]`.
+- `gcal list [--from --to --calendar --format json|tsv|csv|raw|table]`.
+- `gcal calendars list [--format ...]`.
+- `add`, top-level quick-add, conference (Google Meet) support.
 - Apache 2.0 attribution + Sponsor button.
 
 **On the queue (not yet implemented):**
-- Multi-profile auth (`gcal auth login/status/logout/switch`).
-- `gcal list --from --to --format json|tsv|csv|raw|table`.
-- `gcal calendars list`.
-- `gcal init` interactive setup wizard.
-- `gcal config get/set`, `agenda`, `search`, `edit`, `delete`,
-  `import`, `remind`.
-- Man page generation.
+- W1: `gcal init` wizard, `config get/set`, `agenda`, `search`,
+  `edit`, `delete`, `import`, `quick`/conference polish.
+- W2: `remind`, conky/template formatters, man page.
 
 Roadmap detail: [`queue/INDEX.md`](queue/INDEX.md). Working method:
 no PRs, commit per feature on `main`.
@@ -60,15 +58,21 @@ Step-by-step Google Cloud Console setup: [`docs/custom_auth.md`](docs/custom_aut
 ```sh
 gcal help                                        # show subcommand tree
 gcal "Retro & Demo at 16:00"                     # quick-add (today)
-gcal "Appointment on June 3rd 10am-10:25am"      # quick-add (natural date)
 gcal "Appointment" "10:25"                       # quick-add with time
 gcal add "Sprint planning" "2026-05-06 10:00"    # explicit add
 gcal "Appointment" "23:45" --conference          # add with Google Meet
-gcal list                                        # current week table
-```
 
-`--from / --to / --format` flags for `list` are on the queue
-([W0-P5](queue/W0-mvp-auth-list/P5-list-range/), [W0-P6](queue/W0-mvp-auth-list/P6-list-json/)).
+# W0 MVP — list + auth + calendars
+gcal list                                        # current week (table)
+gcal list --from today --to +30d --format json   # JSON range query
+gcal list --from 2026-05-01 --to 2026-05-31 --format tsv > planning.tsv
+gcal list --calendar work@example.com --format raw
+gcal calendars list                              # see calendar IDs
+gcal auth login --profile work                   # multi-profile
+gcal auth status --all
+gcal auth switch personal
+gcal auth logout --profile work --purge
+```
 
 ## Configuration
 

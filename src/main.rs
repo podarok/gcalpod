@@ -176,6 +176,32 @@ async fn main() {
                         ),
                 ),
         )
+        .subcommand(
+            Command::new("calendars")
+                .about("List or inspect calendars accessible to the active profile")
+                .subcommand_required(true)
+                .arg_required_else_help(true)
+                .subcommand(
+                    Command::new("list")
+                        .about("List all calendars accessible to the active profile")
+                        .arg(
+                            Arg::new("format")
+                                .help("Output format: table | json | tsv | csv | raw")
+                                .long("format")
+                                .value_parser(["table", "json", "tsv", "csv", "raw"])
+                                .default_value("table")
+                                .required(false),
+                        )
+                        .arg(
+                            Arg::new("json")
+                                .help("Alias for --format json")
+                                .long("json")
+                                .action(ArgAction::SetTrue)
+                                .required(false)
+                                .conflicts_with("format"),
+                        ),
+                ),
+        )
         .get_matches();
 
     // Resolve active profile: --profile flag > GCAL_PROFILE env > config.toml > "default".
@@ -261,6 +287,42 @@ async fn main() {
     };
 
     let tz: Tz = get_default_timezone(&hub).await.unwrap();
+
+    // calendars subcommand needs hub (handled before list/add).
+    if let Some(("calendars", cal_m)) = matches.subcommand() {
+        match cal_m.subcommand() {
+            Some(("list", list_m)) => {
+                let format_str = if list_m.get_flag("json") {
+                    "json"
+                } else {
+                    list_m
+                        .get_one::<String>("format")
+                        .map(String::as_str)
+                        .unwrap_or("table")
+                };
+                let format = match util::format::OutputFormat::parse(format_str) {
+                    Ok(f) => f,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        return;
+                    }
+                };
+                if let Err(e) = commands::calendars::list::run(
+                    &hub,
+                    commands::calendars::list::ListArgs { format },
+                )
+                .await
+                {
+                    eprintln!("Error listing calendars: {}", e);
+                }
+                return;
+            }
+            _ => {
+                eprintln!("Unknown calendars subcommand. Run `gcal calendars --help`.");
+                std::process::exit(2);
+            }
+        }
+    }
 
     match matches.subcommand() {
         Some(("list", list_m)) => {

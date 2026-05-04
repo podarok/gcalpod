@@ -62,4 +62,26 @@ gcal calendars list --json | jq '.[] | select(.primary)'
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Surface: `gcal calendars list [--format <table|json|tsv|csv|raw>]
+[--json]`. Reuses `OutputFormat` from `util::format` (W0-P6).
+
+Files:
+- `src/commands/calendars/mod.rs` (new) — group.
+- `src/commands/calendars/list.rs` (new) — `ListArgs { format }`,
+  `CalendarSummary`, `run(hub, args)`. Renderers for json (tty
+  pretty/compact toggle), tsv (tab-escaping), csv (csv crate), raw
+  (upstream `Vec<CalendarListEntry>`), table (comfy-table with
+  primary `✓` marker).
+- `src/commands/mod.rs` — register `calendars`.
+- `src/main.rs` — register `calendars list` clap subcommand,
+  dispatch after `calendar::auth(&prof)` (needs hub).
+
+TSV/CSV columns: `id summary access_role primary timezone`. JSON
+schema:
+`{id, summary, description, access_role, primary, timezone, selected}`
+(7 fields).
+
+Smoke: `gcal calendars --help` + `gcal calendars list --help` show
+correct flags. Build clean.

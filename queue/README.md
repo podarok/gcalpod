@@ -23,7 +23,7 @@ containing the plan. Each wave gates the next.
 
 | Wave | Summary | Spec |
 |---|---|---|
-| **W0-mvp-auth-list** | Smallest surface that pulls events for stm32 planning: `auth login/status/logout/switch`, `list --from --to --json`, `calendars list`. **Blocks W1.** | [`W0-mvp-auth-list/`](W0-mvp-auth-list/) |
+| **W0-mvp-auth-list** | Smallest surface that pulls events for stm32 planning: `auth login/status/logout/switch`, `list --from --to --format`, `calendars list`. **DONE 2026-05-04.** | [`W0-mvp-auth-list/`](W0-mvp-auth-list/) |
 | W1-full-cli-surface | Polish: `init` wizard, `config get/set`, `agenda`, `search`, `edit`, `delete`, `import`, `quick`, conference flag. | [`W1-full-cli-surface/`](W1-full-cli-surface/) |
 | W2-polish | `remind`, formatter modes (conky / template), `clap_mangen` man page. | [`W2-polish/`](W2-polish/) |
 | W3-detach-rename | Detach fork + rename project + Apache 2.0 attribution. **DONE 2026-05-04** — repo is now `podarok/gcalpod`. | [`W3-detach-rename/`](W3-detach-rename/) |
