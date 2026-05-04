@@ -205,6 +205,20 @@ async fn main() {
                 .subcommand(Command::new("path").about("Print absolute path of config.toml")),
         )
         .subcommand(
+            Command::new("quick")
+                .about("Natural-language event creation (Google quick-add)")
+                .arg(Arg::new("text").required(true))
+                .arg(Arg::new("calendar").long("calendar").required(false))
+                .arg(
+                    Arg::new("conference")
+                        .help("Attach a Google Meet conference (post-create patch)")
+                        .long("conference")
+                        .short('c')
+                        .action(ArgAction::SetTrue)
+                        .required(false),
+                ),
+        )
+        .subcommand(
             Command::new("import")
                 .about("Bulk-insert events from an ICS / VCAL file")
                 .arg(Arg::new("path").required(true))
@@ -436,6 +450,48 @@ async fn main() {
     };
 
     let tz: Tz = get_default_timezone(&hub).await.unwrap();
+
+    if let Some(("quick", m)) = matches.subcommand() {
+        let text = m.get_one::<String>("text").unwrap();
+        let calendar_id: &str = m
+            .get_one::<String>("calendar")
+            .map(String::as_str)
+            .unwrap_or("primary");
+        let with_conf = m.get_flag("conference");
+        match hub.events().quick_add(calendar_id, text).doit().await {
+            Ok((_, event)) => {
+                let event_id = event.id.clone();
+                println!("Event created: {:?}", event.html_link.unwrap_or_default());
+                if with_conf {
+                    if let Some(eid) = event_id {
+                        let mut patch_event = Event::default();
+                        patch_event.conference_data = Some(ConferenceData {
+                            create_request: Some(CreateConferenceRequest {
+                                request_id: Some(Uuid::new_v4().to_string()),
+                                conference_solution_key: Some(ConferenceSolutionKey {
+                                    type_: Some("hangoutsMeet".to_string()),
+                                }),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        });
+                        match hub
+                            .events()
+                            .patch(patch_event, calendar_id, &eid)
+                            .conference_data_version(1)
+                            .doit()
+                            .await
+                        {
+                            Ok((_, _)) => println!("Conference attached."),
+                            Err(e) => eprintln!("Failed to attach conference: {:?}", e),
+                        }
+                    }
+                }
+            }
+            Err(e) => eprintln!("Error creating event: {:?}", e),
+        }
+        return;
+    }
 
     if let Some(("import", m)) = matches.subcommand() {
         let path = m.get_one::<String>("path").unwrap();

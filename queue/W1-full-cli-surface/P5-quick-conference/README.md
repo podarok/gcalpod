@@ -40,4 +40,21 @@ gcal "Lunch" "13:00"     # alias still works
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Surface added: `gcal quick <text> [--calendar <id>] [--conference]`.
+Top-level `gcal "<text>" "[<time>]" [--conference]` retained as
+back-compat alias. `add` already supported `--conference`.
+
+Conference on quick-add: `events.quick_add` returns the created
+event, then `events.patch(patch_event, cal, id).conference_data_version(1)`
+attaches the `hangoutsMeet` ConferenceData via two API calls. Original
+quick-add date inference preserved.
+
+Files:
+- `src/main.rs` — register `quick` clap subcommand + dispatch arm
+  with the patch-after-create flow. Module split deferred to
+  `epic-01-cli-restructure`.
+
+`gcal --help` now shows 13 top-level commands. `quick --help` lists
+`text`, `--calendar`, `-c/--conference`, inherited `--profile`.

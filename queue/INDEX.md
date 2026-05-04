@@ -25,7 +25,7 @@ within each section. Mark status next to each.
 | `agenda` + `search` | done | [`W1-full-cli-surface/P2-agenda-search/README.md`](W1-full-cli-surface/P2-agenda-search/README.md) |
 | `edit` + `delete` | done | [`W1-full-cli-surface/P3-edit-delete/README.md`](W1-full-cli-surface/P3-edit-delete/README.md) |
 | `import` ICS | done | [`W1-full-cli-surface/P4-import-ics/README.md`](W1-full-cli-surface/P4-import-ics/README.md) |
-| `quick` + conference | pending | [`W1-full-cli-surface/P5-quick-conference/README.md`](W1-full-cli-surface/P5-quick-conference/README.md) |
+| `quick` + conference | done | [`W1-full-cli-surface/P5-quick-conference/README.md`](W1-full-cli-surface/P5-quick-conference/README.md) |
 
 ## Polish path (W2)
 
