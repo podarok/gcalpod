@@ -20,3 +20,7 @@ Cargo.lock
 
 # macOS
 .DS_Store
+
+# Local-only OAuth secrets / scratch — never commit
+do_not_commit_to_repo/
+*.secret.json
