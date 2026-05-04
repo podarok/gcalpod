@@ -81,14 +81,26 @@ async fn report_profile(
 
     let secret = prof.secret_path();
     let store = prof.store_path();
-    println!(
-        "  Secret:  {}",
-        if secret.is_file() {
+
+    let secret_label =
+        if std::env::var("GCAL_CLIENT_ID").is_ok() && std::env::var("GCAL_CLIENT_SECRET").is_ok() {
+            "env (GCAL_CLIENT_ID/GCAL_CLIENT_SECRET)".to_string()
+        } else if let Ok(env_file) = std::env::var("GCAL_SECRET_FILE") {
+            format!("env file: {}", env_file)
+        } else if secret.is_file() {
             secret.display().to_string()
         } else {
-            "<missing>".into()
-        }
-    );
+            let shared = Profile::shared_secret_path()?;
+            let flag = Profile::shared_flag_path()?;
+            if shared.is_file() && flag.is_file() {
+                format!("{} (shared)", shared.display())
+            } else if shared.is_file() {
+                format!("{} (legacy)", shared.display())
+            } else {
+                "<missing>".into()
+            }
+        };
+    println!("  Secret:  {}", secret_label);
 
     if !store.is_file() {
         println!("  Token:   <not authenticated>");
