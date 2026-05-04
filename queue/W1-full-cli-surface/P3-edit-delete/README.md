@@ -46,4 +46,32 @@ gcal delete <id> --yes     # skips
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Surface:
+- `gcal edit <event-id> [--calendar] [--field key=value]...`
+- `gcal delete <event-id> [--calendar] [-y|--yes]`
+
+Files:
+- `src/commands/events_mutate.rs` (new) — `EditArgs`, `DeleteArgs`,
+  `edit(hub, args)`, `delete(hub, args)`. Edit fetches the event,
+  applies `--field` mutations (supported keys: `summary`,
+  `description`, `location`, `start`, `end`), then calls
+  `events.update`. Delete prints `id`/`summary`/`start` for
+  confirmation, prompts unless `--yes`, then calls `events.delete`.
+- `src/commands/mod.rs` — register `events_mutate`.
+- `src/main.rs` — register `edit` + `delete` clap subcommands +
+  dispatch (both need hub).
+
+`start` / `end` use `parse_range_input` (same parser as `list
+--from/--to`), so natural inputs like `+7d`, `tomorrow`, RFC3339
+all work.
+
+Editor mode (open `$EDITOR` with full event JSON) deferred — the
+`--field key=value` form covers the common tweak case and avoids
+the `tempfile` + editor-spawn complexity. Add later if needed.
+
+Recurring-series edit/delete remain out of MVP per plan.
+
+Smoke: `gcal edit --help` + `gcal delete --help` show all flags.
+Build clean.

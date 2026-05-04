@@ -205,6 +205,32 @@ async fn main() {
                 .subcommand(Command::new("path").about("Print absolute path of config.toml")),
         )
         .subcommand(
+            Command::new("edit")
+                .about("Edit an existing event by id (use --field key=value)")
+                .arg(Arg::new("event-id").required(true))
+                .arg(Arg::new("calendar").long("calendar").required(false))
+                .arg(
+                    Arg::new("field")
+                        .long("field")
+                        .help("key=value (repeatable). Keys: summary, description, location, start, end")
+                        .action(ArgAction::Append)
+                        .required(false),
+                ),
+        )
+        .subcommand(
+            Command::new("delete")
+                .about("Delete an event by id (prompts confirmation unless --yes)")
+                .arg(Arg::new("event-id").required(true))
+                .arg(Arg::new("calendar").long("calendar").required(false))
+                .arg(
+                    Arg::new("yes")
+                        .long("yes")
+                        .short('y')
+                        .action(ArgAction::SetTrue)
+                        .required(false),
+                ),
+        )
+        .subcommand(
             Command::new("agenda")
                 .about("Flat chronological list of events in a date range")
                 .arg(Arg::new("from").long("from").required(false))
@@ -392,6 +418,59 @@ async fn main() {
     };
 
     let tz: Tz = get_default_timezone(&hub).await.unwrap();
+
+    if let Some(("edit", m)) = matches.subcommand() {
+        let event_id = m.get_one::<String>("event-id").unwrap();
+        let calendar_id: &str = m
+            .get_one::<String>("calendar")
+            .map(String::as_str)
+            .unwrap_or("primary");
+        let fields: Vec<(String, String)> = m
+            .get_many::<String>("field")
+            .map(|vals| {
+                vals.filter_map(|kv| kv.split_once('=').map(|(k, v)| (k.trim().to_string(), v.to_string())))
+                    .collect()
+            })
+            .unwrap_or_default();
+        if let Err(e) = commands::events_mutate::edit(
+            &hub,
+            commands::events_mutate::EditArgs {
+                event_id,
+                calendar_id,
+                fields,
+                tz,
+            },
+        )
+        .await
+        {
+            eprintln!("Error editing event: {}", e);
+            std::process::exit(1);
+        }
+        return;
+    }
+
+    if let Some(("delete", m)) = matches.subcommand() {
+        let event_id = m.get_one::<String>("event-id").unwrap();
+        let calendar_id: &str = m
+            .get_one::<String>("calendar")
+            .map(String::as_str)
+            .unwrap_or("primary");
+        let yes = m.get_flag("yes");
+        if let Err(e) = commands::events_mutate::delete(
+            &hub,
+            commands::events_mutate::DeleteArgs {
+                event_id,
+                calendar_id,
+                yes,
+            },
+        )
+        .await
+        {
+            eprintln!("Error deleting event: {}", e);
+            std::process::exit(1);
+        }
+        return;
+    }
 
     // agenda + search use shared events::list helper.
     if let Some((cmd, m)) = matches.subcommand().filter(|(c, _)| *c == "agenda" || *c == "search") {
