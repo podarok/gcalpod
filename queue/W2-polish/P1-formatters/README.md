@@ -32,4 +32,12 @@ Conky integration: drop `${execi 60 gcal list --format conky}` into
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`. Conky variant only — Tera template
+deferred (heavy dep, low priority for v1).
+
+Files:
+- `src/util/format.rs` — `OutputFormat::Conky` variant +
+  `render_conky()`: one line per event,
+  `${color cyan}YYYY-MM-DD HH:MM${color} <summary>`.
+- `src/main.rs` — list/agenda/search format value_parser includes
+  `conky`. calendars list rejects with hint.

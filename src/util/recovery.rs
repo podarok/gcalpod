@@ -3,6 +3,10 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+fn verbose_mode() -> bool {
+    std::env::var("GCAL_VERBOSE").ok().as_deref() == Some("1")
+}
+
 /// Tee directory under XDG-ish path. Falls back to `/tmp/gcal-tee` if
 /// `dirs::data_local_dir()` is unavailable.
 fn tee_dir() -> PathBuf {
@@ -23,6 +27,11 @@ fn tee_dir() -> PathBuf {
 /// multiple lines, all of it goes into the log.
 pub fn report_error(command: &str, error: &dyn std::fmt::Display) {
     let body = format!("{}\n", error);
+    if verbose_mode() {
+        eprintln!("gcal: {} failed:", command);
+        eprintln!("{}", body.trim_end());
+        return;
+    }
     let log_path = match write_log(command, &body) {
         Ok(p) => p,
         Err(_) => {

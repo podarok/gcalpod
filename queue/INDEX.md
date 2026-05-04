@@ -32,8 +32,8 @@ within each section. Mark status next to each.
 | Phase | Status | Path |
 |---|---|---|
 | `remind` | done | [`W2-polish/P0-remind/README.md`](W2-polish/P0-remind/README.md) |
-| Formatters (conky / template) | pending | [`W2-polish/P1-formatters/README.md`](W2-polish/P1-formatters/README.md) |
-| Man page (clap_mangen) | pending | [`W2-polish/P2-man-page/README.md`](W2-polish/P2-man-page/README.md) |
+| Formatters (conky) | done | [`W2-polish/P1-formatters/README.md`](W2-polish/P1-formatters/README.md) |
+| Man page (`--gen-man`) | done | [`W2-polish/P2-man-page/README.md`](W2-polish/P2-man-page/README.md) |
 
 ## Detach + rename (W3) — DONE 2026-05-04
 
@@ -59,7 +59,7 @@ within each section. Mark status next to each.
 | Research | done | [`W5-rtk-output/P0-research/README.md`](W5-rtk-output/P0-research/README.md) |
 | Options proposal (owner gate) | done — Option C picked | [`W5-rtk-output/P1-options-proposal/README.md`](W5-rtk-output/P1-options-proposal/README.md) |
 | Implement | step-1 done; step-2/3 pending | [`W5-rtk-output/P2-implement/README.md`](W5-rtk-output/P2-implement/README.md) |
-| Verbose flag | pending | [`W5-rtk-output/P3-verbose-flag/README.md`](W5-rtk-output/P3-verbose-flag/README.md) |
+| Verbose flag | done | [`W5-rtk-output/P3-verbose-flag/README.md`](W5-rtk-output/P3-verbose-flag/README.md) |
 
 ## Stable release v1.0.0 (W6)
 

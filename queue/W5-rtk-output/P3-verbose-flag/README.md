@@ -59,4 +59,18 @@ gcal init --verbose
 
 ## Result
 
-_Filled when shipped._
+Implemented 2026-05-04 on `main`.
+
+Files:
+- `src/main.rs` — global `-v/--verbose` flag (clap `.global(true)`).
+  Sets `GCAL_VERBOSE=1` env at runtime, so the existing verbose
+  paths in `calendar::auth` and `recovery::report_error` trip
+  uniformly. List arm prints a one-line preamble in verbose mode:
+  `gcal: list profile='X' calendar='Y' range=... -> ... style=A
+  lineart=B`.
+- `src/util/recovery.rs` — `verbose_mode()` helper. When verbose,
+  `report_error()` prints the full error body inline instead of
+  the truncated summary + log path.
+
+Smoke: `gcal --verbose list` prints preamble + grid; `gcal -v auth
+status` shows fuller context. Build clean, all 47 tests pass.

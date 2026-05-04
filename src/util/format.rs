@@ -13,6 +13,7 @@ pub enum OutputFormat {
     Tsv,
     Csv,
     Raw,
+    Conky,
 }
 
 impl OutputFormat {
@@ -23,8 +24,9 @@ impl OutputFormat {
             "tsv" => Ok(Self::Tsv),
             "csv" => Ok(Self::Csv),
             "raw" => Ok(Self::Raw),
+            "conky" => Ok(Self::Conky),
             other => Err(format!(
-                "unknown --format '{}'. Expected: table, json, tsv, csv, raw",
+                "unknown --format '{}'. Expected: table, json, tsv, csv, raw, conky",
                 other
             )),
         }
@@ -126,8 +128,27 @@ pub fn render_list(
         OutputFormat::Tsv => render_tsv(events),
         OutputFormat::Csv => render_csv(events),
         OutputFormat::Raw => render_raw(raw_events),
+        OutputFormat::Conky => render_conky(events),
         OutputFormat::Table => Err("Table format handled by list arm directly".into()),
     }
+}
+
+fn render_conky(events: &[ListEvent]) -> Result<(), Box<dyn Error>> {
+    // Conky color sequences: ${color <name>} ... ${color}
+    // Format: ${color cyan}YYYY-MM-DD HH:MM${color} <summary>
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    if events.is_empty() {
+        writeln!(out, "${{color grey}}(no events){{color}}")?;
+        return Ok(());
+    }
+    for e in events {
+        let when = e.start.as_deref().unwrap_or("");
+        let summary = e.summary.as_deref().unwrap_or("(no title)");
+        let when_short = when.split('+').next().unwrap_or(when).replace('T', " ");
+        writeln!(out, "${{color cyan}}{}${{color}} {}", when_short, summary)?;
+    }
+    Ok(())
 }
 
 fn render_json(events: &[ListEvent]) -> Result<(), Box<dyn Error>> {

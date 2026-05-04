@@ -12,18 +12,32 @@ use util::calendar::{self, get_default_timezone};
 use util::date::{get_date_from_string, get_start_of_the_week};
 use uuid::Uuid;
 
-#[tokio::main]
-
-async fn main() {
-    let command = Command::new("gcal");
-    let matches = command
+fn build_cli() -> Command {
+    Command::new("gcal")
         .about("Google Calendar - CLI")
         .version(env!("CARGO_PKG_VERSION"))
         .args_conflicts_with_subcommands(true)
         .arg(
+            Arg::new("gen-man")
+                .help("Print man page (clap_mangen) to stdout and exit")
+                .long("gen-man")
+                .action(ArgAction::SetTrue)
+                .global(false)
+                .required(false),
+        )
+        .arg(
             Arg::new("profile")
                 .help("OAuth profile name (overrides GCAL_PROFILE env + config.toml active_profile)")
                 .long("profile")
+                .global(true)
+                .required(false),
+        )
+        .arg(
+            Arg::new("verbose")
+                .help("Verbose output: extra context + hints (for newcomers / init agents)")
+                .long("verbose")
+                .short('v')
+                .action(ArgAction::SetTrue)
                 .global(true)
                 .required(false),
         )
@@ -77,7 +91,7 @@ async fn main() {
                     Arg::new("format")
                         .help("Output format: table | json | tsv | csv | raw")
                         .long("format")
-                        .value_parser(["table", "json", "tsv", "csv", "raw"])
+                        .value_parser(["table", "json", "tsv", "csv", "raw", "conky"])
                         .default_value("table")
                         .required(false),
                 )
@@ -303,7 +317,7 @@ async fn main() {
                 .arg(
                     Arg::new("format")
                         .long("format")
-                        .value_parser(["table", "json", "tsv", "csv", "raw"])
+                        .value_parser(["table", "json", "tsv", "csv", "raw", "conky"])
                         .default_value("table")
                         .required(false),
                 )
@@ -325,7 +339,7 @@ async fn main() {
                 .arg(
                     Arg::new("format")
                         .long("format")
-                        .value_parser(["table", "json", "tsv", "csv", "raw"])
+                        .value_parser(["table", "json", "tsv", "csv", "raw", "conky"])
                         .default_value("table")
                         .required(false),
                 )
@@ -349,7 +363,7 @@ async fn main() {
                             Arg::new("format")
                                 .help("Output format: table | json | tsv | csv | raw")
                                 .long("format")
-                                .value_parser(["table", "json", "tsv", "csv", "raw"])
+                                .value_parser(["table", "json", "tsv", "csv", "raw", "conky"])
                                 .default_value("table")
                                 .required(false),
                         )
@@ -363,7 +377,33 @@ async fn main() {
                         ),
                 ),
         )
-        .get_matches();
+}
+
+#[tokio::main]
+async fn main() {
+    let cli = build_cli();
+    let matches = cli.clone().get_matches();
+
+    // --gen-man: render man page and exit before any auth.
+    if matches.get_flag("gen-man") {
+        let cmd = build_cli();
+        let man = clap_mangen::Man::new(cmd);
+        let mut buf: Vec<u8> = vec![];
+        if let Err(e) = man.render(&mut buf) {
+            eprintln!("gcal: failed to render man page: {}", e);
+            std::process::exit(1);
+        }
+        use std::io::Write;
+        let _ = std::io::stdout().write_all(&buf);
+        return;
+    }
+
+    // Surface --verbose as GCAL_VERBOSE=1 so existing verbose paths
+    // (calendar::auth, recovery hooks) trigger consistently.
+    if matches.get_flag("verbose") {
+        std::env::set_var("GCAL_VERBOSE", "1");
+    }
+    let verbose = matches.get_flag("verbose");
 
     // Resolve active profile: --profile flag > GCAL_PROFILE env > config.toml > "default".
     let cfg = match config::Config::load_or_default() {
@@ -854,6 +894,17 @@ async fn main() {
             }
 
             // Hybrid renderer: grid for short range on wide tty, agenda otherwise.
+            if verbose {
+                eprintln!(
+                    "gcal: list profile='{}' calendar='{}' range={} -> {} style={:?} lineart={:?}",
+                    prof.name,
+                    calendar_id,
+                    time_min.to_rfc3339(),
+                    time_max.to_rfc3339(),
+                    layout_style,
+                    lineart
+                );
+            }
             match events {
                 Ok((_, evs)) => {
                     let raw_events: Vec<google_calendar3::api::Event> =

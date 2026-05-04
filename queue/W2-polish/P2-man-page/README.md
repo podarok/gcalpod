@@ -35,4 +35,18 @@ man gcal           # full reference
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`. Runtime `--gen-man` instead of
+`build.rs` (simpler, no compile-time artifact tracking).
+
+Files:
+- `Cargo.toml` — add `clap_mangen` 0.2.
+- `src/main.rs` — extract clap tree into `fn build_cli() -> Command`.
+  Add `--gen-man` flag at top level; when set, `clap_mangen::Man::new(cmd)`
+  renders to stdout + exits before any auth.
+
+Install pattern:
+```sh
+cargo install --path . --locked
+gcal --gen-man > /usr/local/share/man/man1/gcal.1
+man gcal
+```
