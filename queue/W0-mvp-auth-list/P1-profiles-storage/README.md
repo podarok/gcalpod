@@ -63,4 +63,34 @@ GCAL_VERBOSE=1 cargo run -- --profile work --help
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+- `src/profile.rs` — `Profile { name, dir }` with `secret_path()`,
+  `store_path()`, `ensure_dir()`, `resolve_active()`, `migrate_legacy_if_needed()`.
+- `src/config.rs` — `Config { active_profile, default_calendar, tz,
+  default_format }` with `load_or_default()`, `save_atomic()` (POSIX atomic).
+- `src/main.rs` — global `--profile <name>` flag, resolves active
+  profile, runs migration, passes Profile into `auth()`.
+- `src/util/calendar.rs` — `resolve_secret(profile)` consults
+  `profiles/<name>/secret.json` before legacy `~/.gcal/secret.json`.
+  `auth(profile)` persists token to `profiles/<name>/store.json`.
+- `Cargo.toml` — added `serde` + `toml` deps.
+
+Resolution order final:
+1. `GCAL_CLIENT_ID` + `GCAL_CLIENT_SECRET` env vars.
+2. `GCAL_SECRET_FILE=<path>` env.
+3. `~/.gcal/profiles/<active>/secret.json`.
+4. `~/.gcal/secret.json` (legacy fallback for un-migrated installs).
+
+Active-profile resolution: `--profile` flag > `GCAL_PROFILE` env >
+`config.toml.active_profile` > `"default"`.
+
+Migration: first run on `default` profile with empty
+`profiles/default/` and existing legacy files moves them in (rename,
+not copy). Logs one stderr line.
+
+Tests: 6 new pass (4 `Profile::resolve_active` precedence + 2
+`Config` serde round-trip). Pre-existing failure in
+`util::date::test_get_start_of_the_week` is unrelated.
+
+`cargo run -- --help` shows `--profile <profile>` in global options.

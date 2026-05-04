@@ -1,3 +1,5 @@
+mod config;
+mod profile;
 mod util;
 
 use std::collections::HashMap;
@@ -21,6 +23,13 @@ async fn main() {
         .about("Google Calendar - CLI")
         .version("0.0.1")
         .args_conflicts_with_subcommands(true)
+        .arg(
+            Arg::new("profile")
+                .help("OAuth profile name (overrides GCAL_PROFILE env + config.toml active_profile)")
+                .long("profile")
+                .global(true)
+                .required(false),
+        )
         .arg(
             Arg::new("title")
                 .help("Sets the event title")
@@ -49,7 +58,28 @@ async fn main() {
         .subcommand(Command::new("list").about("Lists all events in Google Calendar"))
         .get_matches();
 
-    let hub = match calendar::auth().await {
+    // Resolve active profile: --profile flag > GCAL_PROFILE env > config.toml > "default".
+    let cfg = match config::Config::load_or_default() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error reading ~/.gcal/config.toml - {}", e);
+            return;
+        }
+    };
+    let cli_profile = matches.get_one::<String>("profile").map(String::as_str);
+    let active_profile = profile::Profile::resolve_active(cli_profile, &cfg);
+    let prof = match profile::Profile::new(&active_profile) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("Error resolving profile '{}' - {}", active_profile, e);
+            return;
+        }
+    };
+    if let Err(e) = prof.migrate_legacy_if_needed() {
+        eprintln!("Warning: legacy migration failed - {}", e);
+    }
+
+    let hub = match calendar::auth(&prof).await {
         Ok(hub) => hub,
         Err(e) => {
             eprintln!("Error during authentication - {}", e);

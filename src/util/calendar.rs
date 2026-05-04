@@ -10,13 +10,15 @@ use google_calendar3::{
 };
 
 use super::file;
+use crate::profile::Profile;
 
 /// Source of the OAuth ApplicationSecret used by `auth()`.
 ///
 /// Resolution order:
 /// 1. `GCAL_CLIENT_ID` + `GCAL_CLIENT_SECRET` env vars (in-memory secret).
 /// 2. `GCAL_SECRET_FILE` env var pointing to a JSON file.
-/// 3. `~/.gcal/secret.json` (default).
+/// 3. `~/.gcal/profiles/<active>/secret.json` (per-profile).
+/// 4. `~/.gcal/secret.json` (legacy fallback for un-migrated installs).
 ///
 /// If none are configured, `auth()` returns an error directing the
 /// user to `docs/custom_auth.md`. There is no built-in fallback —
@@ -25,10 +27,13 @@ use super::file;
 enum SecretSource {
     Env,
     EnvFile(PathBuf),
-    DefaultFile(PathBuf),
+    ProfileFile(PathBuf),
+    LegacyFile(PathBuf),
 }
 
-async fn resolve_secret() -> Result<(ApplicationSecret, SecretSource), Box<dyn Error>> {
+async fn resolve_secret(
+    profile: &Profile,
+) -> Result<(ApplicationSecret, SecretSource), Box<dyn Error>> {
     if let (Ok(id), Ok(sec)) = (env::var("GCAL_CLIENT_ID"), env::var("GCAL_CLIENT_SECRET")) {
         let secret = build_secret(&id, &sec, env::var("GCAL_PROJECT_ID").ok());
         return Ok((secret, SecretSource::Env));
@@ -42,19 +47,25 @@ async fn resolve_secret() -> Result<(ApplicationSecret, SecretSource), Box<dyn E
         return Ok((secret, SecretSource::EnvFile(path)));
     }
 
-    let default_path: PathBuf = file::get_absolute_path(".gcal/secret.json")?;
-    let _ = file::ensure_directory_exists(&default_path);
-    if default_path.is_file() {
-        let secret = read_google_secret(&default_path).await?;
-        return Ok((secret, SecretSource::DefaultFile(default_path)));
+    let profile_secret = profile.secret_path();
+    if profile_secret.is_file() {
+        let secret = read_google_secret(&profile_secret).await?;
+        return Ok((secret, SecretSource::ProfileFile(profile_secret)));
+    }
+
+    let legacy_path: PathBuf = file::get_absolute_path(".gcal/secret.json")?;
+    if legacy_path.is_file() {
+        let secret = read_google_secret(&legacy_path).await?;
+        return Ok((secret, SecretSource::LegacyFile(legacy_path)));
     }
 
     Err(anyhow::anyhow!(
-        "No OAuth credentials configured. Set GCAL_CLIENT_ID + \
-         GCAL_CLIENT_SECRET, GCAL_SECRET_FILE=<path>, or place your \
-         OAuth client JSON at {}. See docs/custom_auth.md for \
-         step-by-step Google Cloud Console setup.",
-        default_path.display()
+        "No OAuth credentials configured for profile '{}'. Set \
+         GCAL_CLIENT_ID + GCAL_CLIENT_SECRET, GCAL_SECRET_FILE=<path>, \
+         or place your OAuth client JSON at {}. See docs/custom_auth.md \
+         for step-by-step Google Cloud Console setup.",
+        profile.name,
+        profile_secret.display()
     )
     .into())
 }
@@ -77,17 +88,22 @@ fn build_secret(client_id: &str, client_secret: &str, project_id: Option<String>
 
 /// Authenticates the user with Google Calendar API and returns a CalendarHub instance.
 ///
-/// Looks up OAuth credentials via `resolve_secret` (env vars → custom file →
-/// `~/.gcal/secret.json`). Errors if none configured. Set `GCAL_VERBOSE=1`
-/// to print the resolved source on stderr.
-pub async fn auth() -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dyn Error>> {
-    let (secret, source) = resolve_secret().await?;
+/// Looks up OAuth credentials via `resolve_secret` for the given `profile`.
+/// Persists the token to `~/.gcal/profiles/<profile>/store.json`. Errors if
+/// no credentials configured. Set `GCAL_VERBOSE=1` to print the resolved
+/// source + profile on stderr.
+pub async fn auth(
+    profile: &Profile,
+) -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dyn Error>> {
+    let (secret, source) = resolve_secret(profile).await?;
 
     if env::var("GCAL_VERBOSE").ok().as_deref() == Some("1") {
+        eprintln!("gcal: profile '{}'", profile.name);
         match &source {
             SecretSource::Env => eprintln!("gcal: OAuth secret from env (GCAL_CLIENT_ID/GCAL_CLIENT_SECRET)"),
             SecretSource::EnvFile(p) => eprintln!("gcal: OAuth secret from GCAL_SECRET_FILE={}", p.display()),
-            SecretSource::DefaultFile(p) => eprintln!("gcal: OAuth secret from {}", p.display()),
+            SecretSource::ProfileFile(p) => eprintln!("gcal: OAuth secret from {}", p.display()),
+            SecretSource::LegacyFile(p) => eprintln!("gcal: OAuth secret from legacy {} (run any cmd as profile 'default' to migrate)", p.display()),
         }
     }
 
@@ -96,7 +112,8 @@ pub async fn auth() -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dy
         yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect,
     );
 
-    let store_path = file::get_absolute_path(".gcal/store.json")?;
+    profile.ensure_dir()?;
+    let store_path = profile.store_path();
     let auth = auth_builder
         .persist_tokens_to_disk(&store_path)
         .build()

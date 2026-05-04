@@ -8,7 +8,7 @@ within each section. Mark status next to each.
 | Phase | Status | Path |
 |---|---|---|
 | Prelude — env-var resolution | done | [`W0-mvp-auth-list/P0-prelude-env-resolution/README.md`](W0-mvp-auth-list/P0-prelude-env-resolution/README.md) |
-| Profile storage | pending | [`W0-mvp-auth-list/P1-profiles-storage/README.md`](W0-mvp-auth-list/P1-profiles-storage/README.md) |
+| Profile storage | done | [`W0-mvp-auth-list/P1-profiles-storage/README.md`](W0-mvp-auth-list/P1-profiles-storage/README.md) |
 | `auth login` | pending | [`W0-mvp-auth-list/P2-auth-login/README.md`](W0-mvp-auth-list/P2-auth-login/README.md) |
 | `auth status` | pending | [`W0-mvp-auth-list/P3-auth-status/README.md`](W0-mvp-auth-list/P3-auth-status/README.md) |
 | `auth logout` + `switch` | pending | [`W0-mvp-auth-list/P4-auth-logout-switch/README.md`](W0-mvp-auth-list/P4-auth-logout-switch/README.md) |
