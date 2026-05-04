@@ -205,6 +205,49 @@ async fn main() {
                 .subcommand(Command::new("path").about("Print absolute path of config.toml")),
         )
         .subcommand(
+            Command::new("agenda")
+                .about("Flat chronological list of events in a date range")
+                .arg(Arg::new("from").long("from").required(false))
+                .arg(Arg::new("to").long("to").required(false))
+                .arg(Arg::new("calendar").long("calendar").required(false))
+                .arg(
+                    Arg::new("format")
+                        .long("format")
+                        .value_parser(["table", "json", "tsv", "csv", "raw"])
+                        .default_value("table")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("json")
+                        .long("json")
+                        .action(ArgAction::SetTrue)
+                        .required(false)
+                        .conflicts_with("format"),
+                ),
+        )
+        .subcommand(
+            Command::new("search")
+                .about("Full-text search events via Google Calendar API")
+                .arg(Arg::new("query").required(true))
+                .arg(Arg::new("from").long("from").required(false))
+                .arg(Arg::new("to").long("to").required(false))
+                .arg(Arg::new("calendar").long("calendar").required(false))
+                .arg(
+                    Arg::new("format")
+                        .long("format")
+                        .value_parser(["table", "json", "tsv", "csv", "raw"])
+                        .default_value("table")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("json")
+                        .long("json")
+                        .action(ArgAction::SetTrue)
+                        .required(false)
+                        .conflicts_with("format"),
+                ),
+        )
+        .subcommand(
             Command::new("calendars")
                 .about("List or inspect calendars accessible to the active profile")
                 .subcommand_required(true)
@@ -349,6 +392,74 @@ async fn main() {
     };
 
     let tz: Tz = get_default_timezone(&hub).await.unwrap();
+
+    // agenda + search use shared events::list helper.
+    if let Some((cmd, m)) = matches.subcommand().filter(|(c, _)| *c == "agenda" || *c == "search") {
+        let week_start = get_start_of_the_week();
+        let default_from_utc = week_start.with_hour(0).unwrap().to_utc();
+        let default_to_utc = default_from_utc + Duration::days(7);
+        let time_min = match m.get_one::<String>("from") {
+            Some(s) => match util::date::parse_range_input(tz, s) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("Error parsing --from: {}", e);
+                    return;
+                }
+            },
+            None => default_from_utc,
+        };
+        let time_max = match m.get_one::<String>("to") {
+            Some(s) => match util::date::parse_range_input(tz, s) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("Error parsing --to: {}", e);
+                    return;
+                }
+            },
+            None => default_to_utc,
+        };
+        if time_max <= time_min {
+            eprintln!("Error: --to must be after --from.");
+            return;
+        }
+        let calendar_id: &str = m
+            .get_one::<String>("calendar")
+            .map(String::as_str)
+            .unwrap_or("primary");
+        let format_str = if m.get_flag("json") {
+            "json"
+        } else {
+            m.get_one::<String>("format").map(String::as_str).unwrap_or("table")
+        };
+        let output_format = match util::format::OutputFormat::parse(format_str) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                return;
+            }
+        };
+        let query = if cmd == "search" {
+            Some(m.get_one::<String>("query").unwrap().as_str())
+        } else {
+            None
+        };
+        if let Err(e) = commands::events::list(
+            &hub,
+            commands::events::EventsListArgs {
+                time_min,
+                time_max,
+                calendar_id,
+                query,
+                format: output_format,
+                tz,
+            },
+        )
+        .await
+        {
+            eprintln!("Error fetching events: {}", e);
+        }
+        return;
+    }
 
     // calendars subcommand needs hub (handled before list/add).
     if let Some(("calendars", cal_m)) = matches.subcommand() {

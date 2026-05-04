@@ -41,4 +41,22 @@ gcal search "fw" --calendar team-firmware@example.com --format json
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Files:
+- `src/commands/events.rs` (new) — shared `list(hub, args)` helper +
+  `EventsListArgs { time_min, time_max, calendar_id, query, format, tz }`.
+  Table renderer = flat chronological lines (`YYYY-MM-DD HH:MM-HH:MM
+  <summary>`) sorted by start; non-table dispatch via
+  `format::render_list`.
+- `src/commands/mod.rs` — register `events`.
+- `src/main.rs` — register `agenda` + `search` clap subcommands;
+  unified dispatch arm in `main()` drives both via
+  `commands::events::list`. `search` adds required positional
+  `<query>` forwarded as `events.list().q(query)`.
+
+Defaults match `list`: current Monday-anchored week if `--from` /
+`--to` omitted; `--calendar primary`; `--format table`.
+
+Smoke: `gcal agenda --help` + `gcal search --help` show all flags
+including inherited global `--profile`.

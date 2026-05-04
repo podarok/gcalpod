@@ -22,7 +22,7 @@ within each section. Mark status next to each.
 |---|---|---|
 | `init` wizard | done | [`W1-full-cli-surface/P0-init-wizard/README.md`](W1-full-cli-surface/P0-init-wizard/README.md) |
 | `config get/set` | done | [`W1-full-cli-surface/P1-config-cmds/README.md`](W1-full-cli-surface/P1-config-cmds/README.md) |
-| `agenda` + `search` | pending | [`W1-full-cli-surface/P2-agenda-search/README.md`](W1-full-cli-surface/P2-agenda-search/README.md) |
+| `agenda` + `search` | done | [`W1-full-cli-surface/P2-agenda-search/README.md`](W1-full-cli-surface/P2-agenda-search/README.md) |
 | `edit` + `delete` | pending | [`W1-full-cli-surface/P3-edit-delete/README.md`](W1-full-cli-surface/P3-edit-delete/README.md) |
 | `import` ICS | pending | [`W1-full-cli-surface/P4-import-ics/README.md`](W1-full-cli-surface/P4-import-ics/README.md) |
 | `quick` + conference | pending | [`W1-full-cli-surface/P5-quick-conference/README.md`](W1-full-cli-surface/P5-quick-conference/README.md) |
