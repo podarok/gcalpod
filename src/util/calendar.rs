@@ -1,4 +1,4 @@
-use std::{error::Error, path::Path};
+use std::{env, error::Error, path::{Path, PathBuf}};
 
 use anyhow::{Context, Result};
 use chrono_tz::Tz;
@@ -11,50 +11,95 @@ use google_calendar3::{
 
 use super::file;
 
+const FALLBACK_CLIENT_ID: &str =
+    "REDACTED_OAUTH_CLIENT_ID";
+const FALLBACK_CLIENT_SECRET: &str = "REDACTED_OAUTH_SECRET";
+
+/// Source of the OAuth ApplicationSecret used by `auth()`.
+///
+/// Resolution order:
+/// 1. `GCAL_CLIENT_ID` + `GCAL_CLIENT_SECRET` env vars (in-memory secret).
+/// 2. `GCAL_SECRET_FILE` env var pointing to a JSON file.
+/// 3. `~/.gcal/secret.json` (legacy default).
+/// 4. Built-in fallback OAuth project (shared, rate-limited).
+#[derive(Debug)]
+enum SecretSource {
+    Env,
+    EnvFile(PathBuf),
+    DefaultFile(PathBuf),
+    Fallback,
+}
+
+async fn resolve_secret() -> Result<(ApplicationSecret, SecretSource), Box<dyn Error>> {
+    if let (Ok(id), Ok(sec)) = (env::var("GCAL_CLIENT_ID"), env::var("GCAL_CLIENT_SECRET")) {
+        let secret = build_secret(&id, &sec, env::var("GCAL_PROJECT_ID").ok());
+        return Ok((secret, SecretSource::Env));
+    }
+
+    if let Ok(custom) = env::var("GCAL_SECRET_FILE") {
+        let path = PathBuf::from(&custom);
+        let secret = read_google_secret(&path).await.with_context(|| {
+            format!("GCAL_SECRET_FILE={} could not be read", path.display())
+        })?;
+        return Ok((secret, SecretSource::EnvFile(path)));
+    }
+
+    let default_path: PathBuf = file::get_absolute_path(".gcal/secret.json")?;
+    let _ = file::ensure_directory_exists(&default_path);
+    if default_path.is_file() {
+        let secret = read_google_secret(&default_path).await?;
+        return Ok((secret, SecretSource::DefaultFile(default_path)));
+    }
+
+    let fallback = build_secret(FALLBACK_CLIENT_ID, FALLBACK_CLIENT_SECRET, None);
+    Ok((fallback, SecretSource::Fallback))
+}
+
+fn build_secret(client_id: &str, client_secret: &str, project_id: Option<String>) -> ApplicationSecret {
+    ApplicationSecret {
+        client_id: client_id.to_string(),
+        client_secret: client_secret.to_string(),
+        auth_uri: "https://accounts.google.com/o/oauth2/auth".to_string(),
+        token_uri: "https://accounts.google.com/o/oauth2/token".to_string(),
+        redirect_uris: vec!["urn:ietf:wg:oauth:2.0:oob".to_string()],
+        auth_provider_x509_cert_url: Some(
+            "https://www.googleapis.com/oauth2/v1/certs".to_string(),
+        ),
+        project_id,
+        client_email: None,
+        client_x509_cert_url: None,
+    }
+}
+
 /// Authenticates the user with Google Calendar API and returns a CalendarHub instance.
 ///
-/// ## Returns
-///
-/// * `Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dyn Error>>` - A result containing the CalendarHub instance or an error if any step fails.
-///
-/// ## Errors
-///
-/// This function will return an error if:
-/// - The home directory cannot be determined.
-/// - The secret JSON file cannot be read.
-/// - The authenticator fails to build or retrieve tokens.
-/// - Any other I/O or network errors occur during these operations.
+/// Looks up OAuth credentials via `resolve_secret` (env vars → custom file →
+/// `~/.gcal/secret.json` → built-in fallback). Set `GCAL_VERBOSE=1` to print
+/// the resolved source on stderr.
 pub async fn auth() -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dyn Error>> {
-    let secret_absolute_path = file::get_absolute_path(".gcal/secret.json")?;
-    let secret_path = std::path::Path::new(&secret_absolute_path);
-    let _ = file::ensure_directory_exists(secret_path);
-    let auth_builder = match read_google_secret(secret_path).await {
-        Ok(secret) => yup_oauth2::InstalledFlowAuthenticator::builder(
-            secret,
-            yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect,
-        ),
-        Err(_) => {
-            let secret: yup_oauth2::ApplicationSecret = ApplicationSecret {
-                auth_uri: "https://accounts.google.com/o/oauth2/auth".to_string(),
-                client_secret: "REDACTED_OAUTH_SECRET".to_string(),
-                token_uri: "https://accounts.google.com/o/oauth2/token".to_string(),
-                redirect_uris: vec!["urn:ietf:wg:oauth:2.0:oob".to_string()],
-                client_id:
-                    "REDACTED_OAUTH_CLIENT_ID"
-                        .to_string(),
-                auth_provider_x509_cert_url: Some(
-                    "https://www.googleapis.com/oauth2/v1/certs".to_string(),
-                ),
-                project_id: None,
-                client_email: None,
-                client_x509_cert_url: None,
-            };
-            yup_oauth2::InstalledFlowAuthenticator::builder(
-                secret,
-                yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect,
-            )
+    let (secret, source) = resolve_secret().await?;
+
+    if env::var("GCAL_VERBOSE").ok().as_deref() == Some("1") {
+        match &source {
+            SecretSource::Env => eprintln!("gcal: OAuth secret from env (GCAL_CLIENT_ID/GCAL_CLIENT_SECRET)"),
+            SecretSource::EnvFile(p) => eprintln!("gcal: OAuth secret from GCAL_SECRET_FILE={}", p.display()),
+            SecretSource::DefaultFile(p) => eprintln!("gcal: OAuth secret from {}", p.display()),
+            SecretSource::Fallback => eprintln!(
+                "gcal: using built-in shared OAuth project (rate-limited). \
+                 Set GCAL_CLIENT_ID/GCAL_CLIENT_SECRET or place ~/.gcal/secret.json to use your own."
+            ),
         }
-    };
+    } else if matches!(source, SecretSource::Fallback) {
+        eprintln!(
+            "gcal: warning — using built-in shared OAuth project. \
+             Configure your own (see docs/custom_auth.md) to avoid the user cap."
+        );
+    }
+
+    let auth_builder = yup_oauth2::InstalledFlowAuthenticator::builder(
+        secret,
+        yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect,
+    );
 
     let store_path = file::get_absolute_path(".gcal/store.json")?;
     let auth = auth_builder

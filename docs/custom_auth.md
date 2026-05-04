@@ -32,12 +32,37 @@ This guide will help you set up OAuth2 authentication for your Google Calendar A
 4. Click **Create**.
 5. Download the JSON file containing your client ID and secret.
 
-### Step 5: Configure gcalcli
-1. Create a directory for gcalcli configuration:
+### Step 5: Configure gcal
+
+`gcal` looks for OAuth credentials in this resolution order:
+
+1. **Environment variables** (in-memory, no JSON file needed):
+    ```sh
+    export GCAL_CLIENT_ID="<your-client-id>.apps.googleusercontent.com"
+    export GCAL_CLIENT_SECRET="<your-client-secret>"
+    export GCAL_PROJECT_ID="<your-google-project-id>"   # optional
+    ```
+2. **Custom secret file** via env:
+    ```sh
+    export GCAL_SECRET_FILE=/path/to/your/secret.json
+    ```
+3. **Default secret file** at `~/.gcal/secret.json`:
     ```sh
     mkdir -p ~/.gcal
-    ```
-2. Place the downloaded JSON file into the `~/.gcal` directory:
-    ```sh
     mv /path/to/your/downloaded/secret.json ~/.gcal/secret.json
     ```
+4. **Built-in fallback** (shared, rate-limited — emits a warning).
+   Avoid relying on this for daily use.
+
+### Verifying which source is in use
+
+Set `GCAL_VERBOSE=1` to print the resolved source on stderr:
+
+```sh
+GCAL_VERBOSE=1 gcal list
+# gcal: OAuth secret from /Users/you/.gcal/secret.json
+```
+
+The OAuth token itself is cached at `~/.gcal/store.json` after the
+first successful login. Delete that file to force re-authentication
+when you switch OAuth projects.
