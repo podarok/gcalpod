@@ -40,4 +40,24 @@ Manual — run with imminent event, verify command fires once.
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Surface: `gcal remind <mins> [--calendar <id>] -- <command> [args...]`.
+
+Files:
+- `src/commands/remind.rs` (new) — `RemindArgs`, `run(hub, args)`.
+  Pulls events in `[now, now + mins]`, sorts by start, picks first
+  with a date-time start. Interpolates `{{summary}}`, `{{start}}`
+  (RFC3339 in user TZ), `{{html_link}}` into every command token,
+  then exec via `std::process::Command`.
+- `src/commands/mod.rs` — register `remind`.
+- `src/main.rs` — register `remind` clap subcommand with
+  `trailing_var_arg(true)` so `-- terminal-notifier ...` style
+  works. Dispatch uses hub.
+
+If no event in window: prints "no events in the next N minute(s)".
+If command exits non-zero: stderr line includes status + invocation.
+
+Skipped separate `src/util/template.rs` module — substitution is a
+3-line `String::replace` chain done inline. Add module if substitution
+grows beyond the three vars.

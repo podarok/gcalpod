@@ -31,7 +31,7 @@ within each section. Mark status next to each.
 
 | Phase | Status | Path |
 |---|---|---|
-| `remind` | pending | [`W2-polish/P0-remind/README.md`](W2-polish/P0-remind/README.md) |
+| `remind` | done | [`W2-polish/P0-remind/README.md`](W2-polish/P0-remind/README.md) |
 | Formatters (conky / template) | pending | [`W2-polish/P1-formatters/README.md`](W2-polish/P1-formatters/README.md) |
 | Man page (clap_mangen) | pending | [`W2-polish/P2-man-page/README.md`](W2-polish/P2-man-page/README.md) |
 
@@ -51,6 +51,14 @@ within each section. Mark status next to each.
 | Phase | Status | Path |
 |---|---|---|
 | Status-driven README | done | [`W4-readme-refresh/P0-status-driven-readme/README.md`](W4-readme-refresh/P0-status-driven-readme/README.md) |
+
+## RTK output format (W5)
+
+| Phase | Status | Path |
+|---|---|---|
+| Research | done | [`W5-rtk-output/P0-research/README.md`](W5-rtk-output/P0-research/README.md) |
+| Options proposal (owner gate) | pending | [`W5-rtk-output/P1-options-proposal/README.md`](W5-rtk-output/P1-options-proposal/README.md) |
+| Implement | blocked by P1 | [`W5-rtk-output/P2-implement/README.md`](W5-rtk-output/P2-implement/README.md) |
 
 ## Cross-cutting epics
 
@@ -73,3 +81,4 @@ within each section. Mark status next to each.
 | W2 | [`W2-polish/README.md`](W2-polish/README.md) | [`DECISIONS.md`](W2-polish/DECISIONS.md) |
 | W3 | [`W3-detach-rename/README.md`](W3-detach-rename/README.md) | [`DECISIONS.md`](W3-detach-rename/DECISIONS.md) |
 | W4 | [`W4-readme-refresh/README.md`](W4-readme-refresh/README.md) | [`DECISIONS.md`](W4-readme-refresh/DECISIONS.md) |
+| W5 | [`W5-rtk-output/README.md`](W5-rtk-output/README.md) | [`DECISIONS.md`](W5-rtk-output/DECISIONS.md) |

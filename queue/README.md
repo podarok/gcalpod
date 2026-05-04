@@ -27,7 +27,8 @@ containing the plan. Each wave gates the next.
 | W1-full-cli-surface | Polish: `init` wizard, `config get/set`, `agenda`, `search`, `edit`, `delete`, `import`, `quick`, conference flag. **DONE 2026-05-04.** | [`W1-full-cli-surface/`](W1-full-cli-surface/) |
 | W2-polish | `remind`, formatter modes (conky / template), `clap_mangen` man page. | [`W2-polish/`](W2-polish/) |
 | W3-detach-rename | Detach fork + rename project + Apache 2.0 attribution. **DONE 2026-05-04** — repo is now `podarok/gcalpod`. | [`W3-detach-rename/`](W3-detach-rename/) |
-| W4-readme-refresh | Status-driven README rewrite reflecting actual code on main. | [`W4-readme-refresh/`](W4-readme-refresh/) |
+| W4-readme-refresh | Status-driven README rewrite reflecting actual code on main. **DONE.** | [`W4-readme-refresh/`](W4-readme-refresh/) |
+| W5-rtk-output | RTK token-killer output format for all commands + `--help`. **Owner gate at P1.** | [`W5-rtk-output/`](W5-rtk-output/) |
 
 ## Conventions
 

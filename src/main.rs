@@ -205,6 +205,19 @@ async fn main() {
                 .subcommand(Command::new("path").about("Print absolute path of config.toml")),
         )
         .subcommand(
+            Command::new("remind")
+                .about("Run <command> if next event starts within <mins>")
+                .trailing_var_arg(true)
+                .arg(Arg::new("mins").required(true).value_parser(clap::value_parser!(i64)))
+                .arg(Arg::new("calendar").long("calendar").required(false))
+                .arg(
+                    Arg::new("command")
+                        .num_args(1..)
+                        .required(true)
+                        .help("Command + args. {{summary}} {{start}} {{html_link}} get interpolated."),
+                ),
+        )
+        .subcommand(
             Command::new("quick")
                 .about("Natural-language event creation (Google quick-add)")
                 .arg(Arg::new("text").required(true))
@@ -450,6 +463,34 @@ async fn main() {
     };
 
     let tz: Tz = get_default_timezone(&hub).await.unwrap();
+
+    if let Some(("remind", m)) = matches.subcommand() {
+        let mins = *m.get_one::<i64>("mins").unwrap();
+        let calendar_id: &str = m
+            .get_one::<String>("calendar")
+            .map(String::as_str)
+            .unwrap_or("primary");
+        let command: Vec<String> = m
+            .get_many::<String>("command")
+            .unwrap()
+            .cloned()
+            .collect();
+        if let Err(e) = commands::remind::run(
+            &hub,
+            commands::remind::RemindArgs {
+                mins,
+                command,
+                calendar_id,
+                tz,
+            },
+        )
+        .await
+        {
+            eprintln!("Error during remind: {}", e);
+            std::process::exit(1);
+        }
+        return;
+    }
 
     if let Some(("quick", m)) = matches.subcommand() {
         let text = m.get_one::<String>("text").unwrap();
