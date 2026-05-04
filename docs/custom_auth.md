@@ -51,8 +51,8 @@ This guide will help you set up OAuth2 authentication for your Google Calendar A
     mkdir -p ~/.gcal
     mv /path/to/your/downloaded/secret.json ~/.gcal/secret.json
     ```
-4. **Built-in fallback** (shared, rate-limited — emits a warning).
-   Avoid relying on this for daily use.
+If none of the above are configured, `gcal` exits with a setup
+pointer back to this guide — there is no shared / built-in fallback.
 
 ### Verifying which source is in use
 

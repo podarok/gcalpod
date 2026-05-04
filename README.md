@@ -60,20 +60,23 @@ Here are some example commands to help you get started:
 
 ## Authentication
 
-To use gcal, you'll need to authenticate with your Google account. The project includes a default, hardcoded Google API secret, which is suitable for temporary use but has a user cap. For long-term usage, or if you hit the user cap, configure your own OAuth project.
+`gcal` requires you to configure your own Google Cloud OAuth client.
+There is no shared / built-in fallback — every user creates their
+own OAuth project (it takes ~5 minutes and is free for personal use).
 
-### Configuring your own OAuth project
+### Configuring your OAuth project
 
-`gcal` resolves OAuth credentials in this order:
+`gcal` resolves credentials in this order:
 
 1. `GCAL_CLIENT_ID` + `GCAL_CLIENT_SECRET` env vars (optional `GCAL_PROJECT_ID`).
 2. `GCAL_SECRET_FILE` env var pointing to a JSON file.
-3. `~/.gcal/secret.json` (legacy default).
-4. Built-in shared OAuth project (warns on stderr).
+3. `~/.gcal/secret.json` (default file path).
+
+If none are configured, `gcal` errors with a setup pointer.
 
 Set `GCAL_VERBOSE=1` to print which source was used.
 
-Step-by-step Google Console setup is in [docs/custom_auth.md](docs/custom_auth.md).
+Step-by-step Google Cloud Console setup is in [docs/custom_auth.md](docs/custom_auth.md).
 
 ### Authentication Process
 

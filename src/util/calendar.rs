@@ -11,23 +11,21 @@ use google_calendar3::{
 
 use super::file;
 
-const FALLBACK_CLIENT_ID: &str =
-    "REDACTED_OAUTH_CLIENT_ID";
-const FALLBACK_CLIENT_SECRET: &str = "REDACTED_OAUTH_SECRET";
-
 /// Source of the OAuth ApplicationSecret used by `auth()`.
 ///
 /// Resolution order:
 /// 1. `GCAL_CLIENT_ID` + `GCAL_CLIENT_SECRET` env vars (in-memory secret).
 /// 2. `GCAL_SECRET_FILE` env var pointing to a JSON file.
-/// 3. `~/.gcal/secret.json` (legacy default).
-/// 4. Built-in fallback OAuth project (shared, rate-limited).
+/// 3. `~/.gcal/secret.json` (default).
+///
+/// If none are configured, `auth()` returns an error directing the
+/// user to `docs/custom_auth.md`. There is no built-in fallback —
+/// every user must configure their own Google Cloud OAuth client.
 #[derive(Debug)]
 enum SecretSource {
     Env,
     EnvFile(PathBuf),
     DefaultFile(PathBuf),
-    Fallback,
 }
 
 async fn resolve_secret() -> Result<(ApplicationSecret, SecretSource), Box<dyn Error>> {
@@ -51,8 +49,14 @@ async fn resolve_secret() -> Result<(ApplicationSecret, SecretSource), Box<dyn E
         return Ok((secret, SecretSource::DefaultFile(default_path)));
     }
 
-    let fallback = build_secret(FALLBACK_CLIENT_ID, FALLBACK_CLIENT_SECRET, None);
-    Ok((fallback, SecretSource::Fallback))
+    Err(anyhow::anyhow!(
+        "No OAuth credentials configured. Set GCAL_CLIENT_ID + \
+         GCAL_CLIENT_SECRET, GCAL_SECRET_FILE=<path>, or place your \
+         OAuth client JSON at {}. See docs/custom_auth.md for \
+         step-by-step Google Cloud Console setup.",
+        default_path.display()
+    )
+    .into())
 }
 
 fn build_secret(client_id: &str, client_secret: &str, project_id: Option<String>) -> ApplicationSecret {
@@ -74,8 +78,8 @@ fn build_secret(client_id: &str, client_secret: &str, project_id: Option<String>
 /// Authenticates the user with Google Calendar API and returns a CalendarHub instance.
 ///
 /// Looks up OAuth credentials via `resolve_secret` (env vars → custom file →
-/// `~/.gcal/secret.json` → built-in fallback). Set `GCAL_VERBOSE=1` to print
-/// the resolved source on stderr.
+/// `~/.gcal/secret.json`). Errors if none configured. Set `GCAL_VERBOSE=1`
+/// to print the resolved source on stderr.
 pub async fn auth() -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dyn Error>> {
     let (secret, source) = resolve_secret().await?;
 
@@ -84,16 +88,7 @@ pub async fn auth() -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dy
             SecretSource::Env => eprintln!("gcal: OAuth secret from env (GCAL_CLIENT_ID/GCAL_CLIENT_SECRET)"),
             SecretSource::EnvFile(p) => eprintln!("gcal: OAuth secret from GCAL_SECRET_FILE={}", p.display()),
             SecretSource::DefaultFile(p) => eprintln!("gcal: OAuth secret from {}", p.display()),
-            SecretSource::Fallback => eprintln!(
-                "gcal: using built-in shared OAuth project (rate-limited). \
-                 Set GCAL_CLIENT_ID/GCAL_CLIENT_SECRET or place ~/.gcal/secret.json to use your own."
-            ),
         }
-    } else if matches!(source, SecretSource::Fallback) {
-        eprintln!(
-            "gcal: warning — using built-in shared OAuth project. \
-             Configure your own (see docs/custom_auth.md) to avoid the user cap."
-        );
     }
 
     let auth_builder = yup_oauth2::InstalledFlowAuthenticator::builder(
