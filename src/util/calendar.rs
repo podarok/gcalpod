@@ -65,10 +65,14 @@ async fn resolve_secret(
     }
 
     Err(anyhow::anyhow!(
-        "No OAuth credentials configured for profile '{}'. Set \
-         GCAL_CLIENT_ID + GCAL_CLIENT_SECRET, GCAL_SECRET_FILE=<path>, \
-         or place your OAuth client JSON at {}. See docs/custom_auth.md \
-         for step-by-step Google Cloud Console setup.",
+        "not authenticated for profile '{}'.\n\n\
+         Set up OAuth (pick one):\n  \
+           1. gcal init                  # interactive wizard (recommended)\n  \
+           2. gcal init --shared         # one client across all profiles\n  \
+           3. export GCAL_CLIENT_ID=... GCAL_CLIENT_SECRET=...\n  \
+           4. export GCAL_SECRET_FILE=/path/to/client_secret.json\n  \
+           5. mv client_secret.json {}\n\n\
+         Step-by-step Google Cloud Console: docs/custom_auth.md",
         profile.name,
         profile_secret.display()
     )

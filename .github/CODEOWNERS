@@ -1,0 +1,5 @@
+# CODEOWNERS — every change to main needs maintainer review.
+# Branch protection on `main` requires at least one approval from
+# the listed owner before merge.
+
+* @podarok

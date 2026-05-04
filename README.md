@@ -205,9 +205,16 @@ in [`.github/FUNDING.yml`](.github/FUNDING.yml)):
 
 ## Working method
 
-Commits land directly on `main`. **No PRs** for routine work; force
-push only with explicit owner gate (used once during the W3
-secret-history purge).
+Starting **v1.0.0**, all changes to `main` flow through **open
+issues + pull requests** (`PR/Issue gate`). Direct pushes to `main`
+are blocked. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full
+workflow:
+
+1. Open an issue describing intent.
+2. Wait for maintainer ack.
+3. Fork or branch → push commits.
+4. Open a PR; CI must pass (`fmt`, `clippy`, `test`, smoke).
+5. Maintainer review + merge.
 
 The full v1.0.0 work plan and decision history were transferred
 upstream to [`ITCare-Company/template_for_agents/process-knowledge-base/gcalpod-queue/`](https://github.com/ITCare-Company/template_for_agents/tree/main/process-knowledge-base/gcalpod-queue)

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security advisory (private)
+    url: https://github.com/podarok/gcalpod/security/advisories/new
+    about: Report a vulnerability privately. Do NOT use the public issue tracker.
+  - name: Discussion
+    url: https://github.com/podarok/gcalpod/discussions
+    about: Open-ended ideas, questions, design conversations.
+  - name: Sponsor
+    url: https://github.com/sponsors/podarok
+    about: Fund development; ≥ $5/mo unlocks commercial-use rights via Addendum A.

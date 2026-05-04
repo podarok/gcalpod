@@ -21,8 +21,17 @@ jobs:
     - name: Version
       run: cargo --version --verbose
 
+    - name: Format check
+      run: cargo fmt --all -- --check
+
+    - name: Clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
     - name: Build
       run: cargo build --verbose
 
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --all --verbose
+
+    - name: Smoke
+      run: cargo run --release --quiet -- --version

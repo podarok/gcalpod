@@ -4,6 +4,18 @@ All notable changes to this project follow
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- _next change goes here via PR_
+
+### Changed
+
+### Fixed
+
+### Removed
+
 ## [1.0.0] — 2026-05-04
 
 First stable release. All planned features for v1.0.0 landed:
