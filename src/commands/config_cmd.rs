@@ -120,3 +120,73 @@ fn path() -> Result<(), Box<dyn Error>> {
     println!("{}", Config::path()?.display());
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn read_field_known_keys() {
+        let cfg = Config {
+            active_profile: Some("p".into()),
+            default_calendar: Some("primary".into()),
+            tz: Some("Europe/Kyiv".into()),
+            default_format: Some("json".into()),
+        };
+        assert_eq!(
+            read_field(&cfg, "active_profile").unwrap().as_deref(),
+            Some("p")
+        );
+        assert_eq!(
+            read_field(&cfg, "default_calendar").unwrap().as_deref(),
+            Some("primary")
+        );
+        assert_eq!(
+            read_field(&cfg, "tz").unwrap().as_deref(),
+            Some("Europe/Kyiv")
+        );
+        assert_eq!(
+            read_field(&cfg, "default_format").unwrap().as_deref(),
+            Some("json")
+        );
+    }
+
+    #[test]
+    fn read_field_unknown_key_errors() {
+        let cfg = Config::default();
+        let err = read_field(&cfg, "foo").unwrap_err();
+        assert!(err.to_string().contains("unknown key"));
+    }
+
+    #[test]
+    fn validate_tz_accepts_iana() {
+        validate("tz", "Europe/Kyiv").unwrap();
+        validate("tz", "UTC").unwrap();
+    }
+
+    #[test]
+    fn validate_tz_rejects_garbage() {
+        validate("tz", "NotARealTz").unwrap_err();
+    }
+
+    #[test]
+    fn validate_format_accepts_known() {
+        for f in ["table", "json", "tsv", "csv", "raw"] {
+            validate("default_format", f).unwrap();
+        }
+    }
+
+    #[test]
+    fn validate_format_rejects_yaml() {
+        validate("default_format", "yaml").unwrap_err();
+    }
+
+    #[test]
+    fn write_field_round_trip() {
+        let mut cfg = Config::default();
+        write_field(&mut cfg, "tz", Some("Europe/Kyiv".into())).unwrap();
+        assert_eq!(cfg.tz.as_deref(), Some("Europe/Kyiv"));
+        write_field(&mut cfg, "tz", None).unwrap();
+        assert!(cfg.tz.is_none());
+    }
+}

@@ -53,8 +53,8 @@ pub async fn edit(
                 });
             }
             "end" => {
-                let dt = parse_range_input(args.tz, value)
-                    .map_err(|e| format!("--field end: {}", e))?;
+                let dt =
+                    parse_range_input(args.tz, value).map_err(|e| format!("--field end: {}", e))?;
                 event.end = Some(EventDateTime {
                     date_time: Some(dt),
                     ..Default::default()

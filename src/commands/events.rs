@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use chrono::{DateTime, Datelike, Timelike, TimeZone, Utc};
+use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use chrono_tz::Tz;
 use google_calendar3::api::Event;
 use google_calendar3::{

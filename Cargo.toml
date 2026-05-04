@@ -1,6 +1,6 @@
 [package]
 name = "gcalpod"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "Google Calendar CLI — multi-profile auth, range queries, JSON/TSV/CSV/raw output."
 license = "Apache-2.0"

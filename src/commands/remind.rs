@@ -19,9 +19,7 @@ pub async fn run(
     args: RemindArgs<'_>,
 ) -> Result<(), Box<dyn Error>> {
     if args.command.is_empty() {
-        return Err(
-            "no command provided. Usage: gcal remind <mins> -- <cmd> [args...]".into(),
-        );
+        return Err("no command provided. Usage: gcal remind <mins> -- <cmd> [args...]".into());
     }
 
     let now = Utc::now();
@@ -47,7 +45,10 @@ pub async fn run(
     let target = match items.first() {
         Some(e) => e,
         None => {
-            println!("gcal: no events in the next {} minute(s); nothing to remind.", args.mins);
+            println!(
+                "gcal: no events in the next {} minute(s); nothing to remind.",
+                args.mins
+            );
             return Ok(());
         }
     };
@@ -56,7 +57,10 @@ pub async fn run(
     let html_link = target.html_link.as_deref().unwrap_or("");
     let start_dt = target.start.as_ref().and_then(|s| s.date_time).unwrap();
     use chrono::TimeZone;
-    let start_local = args.tz.from_utc_datetime(&start_dt.naive_utc()).to_rfc3339();
+    let start_local = args
+        .tz
+        .from_utc_datetime(&start_dt.naive_utc())
+        .to_rfc3339();
 
     let interpolated: Vec<String> = args
         .command

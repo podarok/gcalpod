@@ -1,5 +1,9 @@
-use std::{error::Error, fs, path::{Path, PathBuf}};
 use dirs::home_dir;
+use std::{
+    error::Error,
+    fs,
+    path::{Path, PathBuf},
+};
 
 /// Returns the absolute path by appending the given relative path to the user's home directory.
 ///
@@ -35,19 +39,19 @@ pub fn ensure_directory_exists(path: &Path) -> Result<(), Box<dyn Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{env, fs};
     use std::path::Path;
+    use std::{env, fs};
 
     #[test]
     fn test_get_absolute_path() {
         let relative_path = "test_folder/subfolder";
-        let absolute_path = get_absolute_path(relative_path)
-            .expect("Failed to get absolute path");
+        let absolute_path = get_absolute_path(relative_path).expect("Failed to get absolute path");
         let home = home_dir().expect("Failed to get home directory");
 
         assert!(absolute_path.starts_with(&home));
 
-        let appended = absolute_path.strip_prefix(&home)
+        let appended = absolute_path
+            .strip_prefix(&home)
             .expect("Absolute path should have home as prefix");
         assert_eq!(appended, Path::new(relative_path));
     }
@@ -60,8 +64,7 @@ mod tests {
 
         let _ = fs::remove_dir_all(&unique_dir);
 
-        ensure_directory_exists(&test_file_path)
-            .expect("Failed to ensure directory exists");
+        ensure_directory_exists(&test_file_path).expect("Failed to ensure directory exists");
 
         assert!(unique_dir.exists());
 

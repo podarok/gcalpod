@@ -29,7 +29,11 @@ struct InstalledSection {
 pub async fn run(profile: &Profile) -> Result<(), Box<dyn Error>> {
     println!();
     println!("== gcal init wizard ==");
-    println!("Sets up profile '{}' under {}.", profile.name, profile.dir.display());
+    println!(
+        "Sets up profile '{}' under {}.",
+        profile.name,
+        profile.dir.display()
+    );
     println!();
     println!("You'll create your own Google Cloud OAuth client (~5 minutes,");
     println!("free for personal use). Step-by-step pages:");
@@ -42,17 +46,16 @@ pub async fn run(profile: &Profile) -> Result<(), Box<dyn Error>> {
     println!("Detailed walkthrough: docs/custom_auth.md.");
     println!();
 
-    let _ = prompt(
-        "Press <enter> after step 4 (you should have downloaded a JSON file): ",
-    )?;
+    let _ = prompt("Press <enter> after step 4 (you should have downloaded a JSON file): ")?;
 
     profile.ensure_dir()?;
 
     loop {
-        let input = prompt(
-            "Path to the downloaded OAuth client JSON file (drag-and-drop OK): ",
-        )?;
-        let trimmed = input.trim().trim_matches(|c| c == '"' || c == '\'').to_string();
+        let input = prompt("Path to the downloaded OAuth client JSON file (drag-and-drop OK): ")?;
+        let trimmed = input
+            .trim()
+            .trim_matches(|c| c == '"' || c == '\'')
+            .to_string();
         if trimmed.is_empty() {
             println!("Path is empty. Try again or Ctrl-C to abort.");
             continue;
@@ -66,7 +69,10 @@ pub async fn run(profile: &Profile) -> Result<(), Box<dyn Error>> {
         match validate_oauth_json(&src) {
             Ok(()) => {}
             Err(e) => {
-                println!("Validation failed: {}. Re-download from Google Console (Desktop app type).", e);
+                println!(
+                    "Validation failed: {}. Re-download from Google Console (Desktop app type).",
+                    e
+                );
                 continue;
             }
         }

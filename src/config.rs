@@ -39,8 +39,7 @@ impl Config {
         }
         let body = toml::to_string_pretty(self).context("Failed to serialize config to TOML")?;
         let tmp = p.with_extension("toml.tmp");
-        std::fs::write(&tmp, body)
-            .with_context(|| format!("Failed to write {}", tmp.display()))?;
+        std::fs::write(&tmp, body).with_context(|| format!("Failed to write {}", tmp.display()))?;
         std::fs::rename(&tmp, &p)
             .with_context(|| format!("Failed to rename {} -> {}", tmp.display(), p.display()))?;
         Ok(())

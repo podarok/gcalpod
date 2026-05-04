@@ -72,22 +72,27 @@ async fn report_profile(
     active: &Profile,
     args: &StatusArgs,
 ) -> Result<(), Box<dyn Error>> {
-    let active_marker = if prof.name == active.name { " (active)" } else { "" };
+    let active_marker = if prof.name == active.name {
+        " (active)"
+    } else {
+        ""
+    };
     println!("Profile: {}{}", prof.name, active_marker);
 
     let secret = prof.secret_path();
     let store = prof.store_path();
     println!(
         "  Secret:  {}",
-        if secret.is_file() { secret.display().to_string() } else { "<missing>".into() }
+        if secret.is_file() {
+            secret.display().to_string()
+        } else {
+            "<missing>".into()
+        }
     );
 
     if !store.is_file() {
         println!("  Token:   <not authenticated>");
-        println!(
-            "  State:   ✗ run `gcal auth login --profile {}`",
-            prof.name
-        );
+        println!("  State:   ✗ run `gcal auth login --profile {}`", prof.name);
         return Ok(());
     }
 
@@ -102,8 +107,18 @@ async fn report_profile(
         }
     };
 
-    let has_access = entry.token.access_token.as_deref().map(|s| !s.is_empty()).unwrap_or(false);
-    let has_refresh = entry.token.refresh_token.as_deref().map(|s| !s.is_empty()).unwrap_or(false);
+    let has_access = entry
+        .token
+        .access_token
+        .as_deref()
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    let has_refresh = entry
+        .token
+        .refresh_token
+        .as_deref()
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
 
     println!("  Scopes:  {}", entry.scopes.join(", "));
     println!(
@@ -132,7 +147,11 @@ async fn report_profile(
             Err(e) => println!("  State:   ✗ build auth failed: {}", e),
         }
     } else {
-        let state = if has_access && has_refresh { "✓ ready" } else { "✗ incomplete" };
+        let state = if has_access && has_refresh {
+            "✓ ready"
+        } else {
+            "✗ incomplete"
+        };
         println!("  State:   {} (offline check)", state);
     }
 

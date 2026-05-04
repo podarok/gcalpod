@@ -6,7 +6,7 @@ mod util;
 use std::collections::HashMap;
 use std::{collections::hash_map::Entry, fmt::Write};
 
-use chrono::{Datelike, Duration, Month, Timelike, TimeZone};
+use chrono::{Datelike, Duration, Month, TimeZone, Timelike};
 use chrono_tz::Tz;
 use clap::{Arg, ArgAction, Command};
 use comfy_table::{Attribute, Cell, Color, ContentArrangement, Table};
@@ -22,7 +22,7 @@ async fn main() {
     let command = Command::new("gcal");
     let matches = command
         .about("Google Calendar - CLI")
-        .version("0.0.1")
+        .version(env!("CARGO_PKG_VERSION"))
         .args_conflicts_with_subcommands(true)
         .arg(
             Arg::new("profile")
@@ -470,11 +470,7 @@ async fn main() {
             .get_one::<String>("calendar")
             .map(String::as_str)
             .unwrap_or("primary");
-        let command: Vec<String> = m
-            .get_many::<String>("command")
-            .unwrap()
-            .cloned()
-            .collect();
+        let command: Vec<String> = m.get_many::<String>("command").unwrap().cloned().collect();
         if let Err(e) = commands::remind::run(
             &hub,
             commands::remind::RemindArgs {
@@ -569,8 +565,11 @@ async fn main() {
         let fields: Vec<(String, String)> = m
             .get_many::<String>("field")
             .map(|vals| {
-                vals.filter_map(|kv| kv.split_once('=').map(|(k, v)| (k.trim().to_string(), v.to_string())))
-                    .collect()
+                vals.filter_map(|kv| {
+                    kv.split_once('=')
+                        .map(|(k, v)| (k.trim().to_string(), v.to_string()))
+                })
+                .collect()
             })
             .unwrap_or_default();
         if let Err(e) = commands::events_mutate::edit(
@@ -614,7 +613,10 @@ async fn main() {
     }
 
     // agenda + search use shared events::list helper.
-    if let Some((cmd, m)) = matches.subcommand().filter(|(c, _)| *c == "agenda" || *c == "search") {
+    if let Some((cmd, m)) = matches
+        .subcommand()
+        .filter(|(c, _)| *c == "agenda" || *c == "search")
+    {
         let week_start = get_start_of_the_week();
         let default_from_utc = week_start.with_hour(0).unwrap().to_utc();
         let default_to_utc = default_from_utc + Duration::days(7);
@@ -649,7 +651,9 @@ async fn main() {
         let format_str = if m.get_flag("json") {
             "json"
         } else {
-            m.get_one::<String>("format").map(String::as_str).unwrap_or("table")
+            m.get_one::<String>("format")
+                .map(String::as_str)
+                .unwrap_or("table")
         };
         let output_format = match util::format::OutputFormat::parse(format_str) {
             Ok(f) => f,
@@ -795,11 +799,9 @@ async fn main() {
                             .iter()
                             .map(|e| util::format::ListEvent::from_event(e, calendar_id, tz))
                             .collect();
-                        if let Err(e) = util::format::render_list(
-                            output_format,
-                            &list_events,
-                            &raw_events,
-                        ) {
+                        if let Err(e) =
+                            util::format::render_list(output_format, &list_events, &raw_events)
+                        {
                             eprintln!("Error rendering events: {}", e);
                         }
                     }
@@ -812,17 +814,14 @@ async fn main() {
                 match events {
                     Ok((_, evs)) => {
                         if let Some(items) = evs.items {
-                            let mut sorted: Vec<_> = items.into_iter().filter(|e| {
-                                e.start.as_ref().and_then(|s| s.date_time).is_some()
-                            }).collect();
+                            let mut sorted: Vec<_> = items
+                                .into_iter()
+                                .filter(|e| e.start.as_ref().and_then(|s| s.date_time).is_some())
+                                .collect();
                             sorted.sort_by_key(|e| e.start.as_ref().unwrap().date_time.unwrap());
                             for ev in &sorted {
                                 let s = ev.start.as_ref().unwrap().date_time.unwrap();
-                                let e = ev
-                                    .end
-                                    .as_ref()
-                                    .and_then(|x| x.date_time)
-                                    .unwrap_or(s);
+                                let e = ev.end.as_ref().and_then(|x| x.date_time).unwrap_or(s);
                                 let s_local = tz.from_utc_datetime(&s.naive_utc());
                                 let e_local = tz.from_utc_datetime(&e.naive_utc());
                                 let summary = ev.summary.as_deref().unwrap_or("(no title)");
@@ -859,8 +858,13 @@ async fn main() {
                             {
                                 continue;
                             }
-                            let event_start =
-                                event.start.as_ref().unwrap().date_time.unwrap().date_naive();
+                            let event_start = event
+                                .start
+                                .as_ref()
+                                .unwrap()
+                                .date_time
+                                .unwrap()
+                                .date_naive();
                             match event_dates.entry(event_start) {
                                 Entry::Vacant(e) => {
                                     e.insert(vec![event]);
@@ -900,14 +904,16 @@ async fn main() {
                         let mut row_value_after_12: String = "".to_string();
                         if let Some(next_events) = event_dates.get_mut(&next_date.date_naive()) {
                             next_events.sort_by(|a, b| {
-                                    a.start.as_ref()
-                                        .unwrap()
-                                        .date_time
-                                        .unwrap()
-                                        .cmp(&b.start.as_ref().unwrap().date_time.unwrap())
-                                });
+                                a.start
+                                    .as_ref()
+                                    .unwrap()
+                                    .date_time
+                                    .unwrap()
+                                    .cmp(&b.start.as_ref().unwrap().date_time.unwrap())
+                            });
                             for next_event in next_events {
-                                let event_start = next_event.start.as_ref().unwrap().date_time.unwrap();
+                                let event_start =
+                                    next_event.start.as_ref().unwrap().date_time.unwrap();
                                 let event_end = next_event.end.as_ref().unwrap().date_time.unwrap();
                                 let summary = next_event.summary.as_ref().unwrap().to_string();
                                 let formatted_event = format!(
@@ -990,8 +996,13 @@ async fn main() {
                         ..Default::default()
                     });
                 }
-                    
-                let result = hub.events().insert(event, "primary").conference_data_version(1).doit().await;
+
+                let result = hub
+                    .events()
+                    .insert(event, "primary")
+                    .conference_data_version(1)
+                    .doit()
+                    .await;
 
                 match result {
                     Ok((_, event)) => {

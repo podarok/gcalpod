@@ -86,4 +86,22 @@ mod tests {
     fn truncate_takes_first_line_only() {
         assert_eq!(truncate_first_line("first\nsecond", 100), "first");
     }
+
+    #[test]
+    fn write_log_creates_file_with_body() {
+        let body = "operation failed\nfull stack here\n";
+        let path = write_log("integ_test", body).expect("write_log");
+        let read = std::fs::read_to_string(&path).expect("read");
+        assert_eq!(read, body);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn write_log_sanitizes_command_name() {
+        let path = write_log("auth login", "x").expect("write_log");
+        let name = path.file_name().unwrap().to_string_lossy().to_string();
+        assert!(name.contains("auth_login"));
+        assert!(!name.contains(' '));
+        let _ = std::fs::remove_file(&path);
+    }
 }

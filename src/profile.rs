@@ -108,9 +108,15 @@ impl Profile {
 mod tests {
     use super::*;
     use crate::config::Config;
+    use std::sync::Mutex;
+
+    /// Serialize tests that mutate `GCAL_PROFILE` env var to avoid the
+    /// race that occurs under cargo's parallel test runner.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn resolve_active_flag_wins() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let cfg = Config {
             active_profile: Some("config_p".into()),
             ..Default::default()
@@ -122,6 +128,7 @@ mod tests {
 
     #[test]
     fn resolve_active_env_beats_config() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let cfg = Config {
             active_profile: Some("config_p".into()),
             ..Default::default()
@@ -133,6 +140,8 @@ mod tests {
 
     #[test]
     fn resolve_active_config_beats_default() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        std::env::remove_var("GCAL_PROFILE");
         let cfg = Config {
             active_profile: Some("config_p".into()),
             ..Default::default()
@@ -143,8 +152,29 @@ mod tests {
 
     #[test]
     fn resolve_active_falls_back_to_default() {
-        let cfg = Config::default();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::remove_var("GCAL_PROFILE");
+        let cfg = Config::default();
         assert_eq!(Profile::resolve_active(None, &cfg), "default");
+    }
+
+    #[test]
+    fn resolve_active_treats_empty_env_as_unset() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        std::env::set_var("GCAL_PROFILE", "");
+        let cfg = Config {
+            active_profile: Some("from_config".into()),
+            ..Default::default()
+        };
+        assert_eq!(Profile::resolve_active(None, &cfg), "from_config");
+        std::env::remove_var("GCAL_PROFILE");
+    }
+
+    #[test]
+    fn profile_paths_match_layout() {
+        let p = Profile::new("work").expect("Profile::new");
+        assert!(p.dir.ends_with(".gcal/profiles/work"));
+        assert!(p.secret_path().ends_with(".gcal/profiles/work/secret.json"));
+        assert!(p.store_path().ends_with(".gcal/profiles/work/store.json"));
     }
 }

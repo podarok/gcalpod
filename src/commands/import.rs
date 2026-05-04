@@ -77,7 +77,10 @@ pub async fn run(
                     .as_ref()
                     .and_then(|s| s.date_time)
                     .map(|d| d.to_rfc3339())
-                    .or_else(|| ev.start.as_ref().and_then(|s| s.date.map(|d| d.format("%Y-%m-%d").to_string())))
+                    .or_else(|| ev
+                        .start
+                        .as_ref()
+                        .and_then(|s| s.date.map(|d| d.format("%Y-%m-%d").to_string())))
                     .unwrap_or_else(|| "?".to_string()),
                 uid.as_deref().unwrap_or("?"),
             );

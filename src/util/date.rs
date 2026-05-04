@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Duration, Local, NaiveDateTime, NaiveTime, Utc, TimeZone};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use chrono_tz::Tz;
 
 /// Returns the start of the current week as a `DateTime<Local>`.
@@ -113,11 +113,15 @@ pub fn parse_range_input(tz: Tz, input: &str) -> Result<DateTime<Utc>, String> {
     if let Some(rest) = s.strip_prefix('+').or_else(|| s.strip_prefix('-')) {
         let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
         if let Some(n_str) = rest.strip_suffix('d') {
-            let n: i64 = n_str.parse().map_err(|e| format!("bad days '{}': {}", n_str, e))?;
+            let n: i64 = n_str
+                .parse()
+                .map_err(|e| format!("bad days '{}': {}", n_str, e))?;
             return Ok(start_of_day_utc(tz, now_local + Duration::days(sign * n)));
         }
         if let Some(n_str) = rest.strip_suffix('w') {
-            let n: i64 = n_str.parse().map_err(|e| format!("bad weeks '{}': {}", n_str, e))?;
+            let n: i64 = n_str
+                .parse()
+                .map_err(|e| format!("bad weeks '{}': {}", n_str, e))?;
             return Ok(start_of_day_utc(tz, now_local + Duration::weeks(sign * n)));
         }
     }
@@ -136,7 +140,10 @@ pub fn parse_range_input(tz: Tz, input: &str) -> Result<DateTime<Utc>, String> {
     if let Some(target_idx) = weekday_idx {
         let today_idx = now_local.weekday().num_days_from_monday();
         let delta = (target_idx + 7 - today_idx) % 7;
-        return Ok(start_of_day_utc(tz, now_local + Duration::days(delta as i64)));
+        return Ok(start_of_day_utc(
+            tz,
+            now_local + Duration::days(delta as i64),
+        ));
     }
 
     // RFC3339
@@ -146,7 +153,9 @@ pub fn parse_range_input(tz: Tz, input: &str) -> Result<DateTime<Utc>, String> {
 
     // YYYY-MM-DD
     if let Ok(d) = chrono::NaiveDate::parse_from_str(input, "%Y-%m-%d") {
-        let nd = d.and_hms_opt(0, 0, 0).ok_or_else(|| "bad time".to_string())?;
+        let nd = d
+            .and_hms_opt(0, 0, 0)
+            .ok_or_else(|| "bad time".to_string())?;
         let local = tz
             .from_local_datetime(&nd)
             .single()
@@ -251,14 +260,77 @@ mod tests {
 
     #[test]
     fn test_get_start_of_the_week() -> Result<(), String> {
+        let start_of_the_week = get_start_of_the_week();
+        // Capture `now` after the function so the function's internal
+        // `Local::now()` cannot be after our anchor (which would race
+        // when today is Monday and the diff equals zero).
         let now = Local::now();
 
-        let start_of_the_week = get_start_of_the_week();
-
-        let days_difference = now.signed_duration_since(start_of_the_week).num_days();        
+        let days_difference = now.signed_duration_since(start_of_the_week).num_days();
         assert!(start_of_the_week <= now);
-        assert!(days_difference >= 0 && days_difference <= 6);
+        assert!((0..=6).contains(&days_difference));
         assert_eq!(start_of_the_week.weekday(), Weekday::Mon);
         Ok(())
+    }
+
+    fn fixture_tz() -> Tz {
+        "UTC".parse().unwrap()
+    }
+
+    #[test]
+    fn parse_range_input_today() {
+        let dt = parse_range_input(fixture_tz(), "today").unwrap();
+        assert_eq!(dt.format("%H:%M:%S").to_string(), "00:00:00");
+    }
+
+    #[test]
+    fn parse_range_input_relative_days() {
+        let today = parse_range_input(fixture_tz(), "today").unwrap();
+        let plus3 = parse_range_input(fixture_tz(), "+3d").unwrap();
+        let diff = (plus3 - today).num_days();
+        assert_eq!(diff, 3);
+    }
+
+    #[test]
+    fn parse_range_input_relative_weeks() {
+        let today = parse_range_input(fixture_tz(), "today").unwrap();
+        let plus2w = parse_range_input(fixture_tz(), "+2w").unwrap();
+        let diff = (plus2w - today).num_days();
+        assert_eq!(diff, 14);
+    }
+
+    #[test]
+    fn parse_range_input_yesterday() {
+        let today = parse_range_input(fixture_tz(), "today").unwrap();
+        let yest = parse_range_input(fixture_tz(), "yesterday").unwrap();
+        let diff = (today - yest).num_days();
+        assert_eq!(diff, 1);
+    }
+
+    #[test]
+    fn parse_range_input_iso_date() {
+        let dt = parse_range_input(fixture_tz(), "2026-05-04").unwrap();
+        assert_eq!(
+            dt.format("%Y-%m-%dT%H:%M:%S").to_string(),
+            "2026-05-04T00:00:00"
+        );
+    }
+
+    #[test]
+    fn parse_range_input_rfc3339() {
+        let dt = parse_range_input(fixture_tz(), "2026-05-04T12:34:56Z").unwrap();
+        assert_eq!(dt.to_rfc3339(), "2026-05-04T12:34:56+00:00");
+    }
+
+    #[test]
+    fn parse_range_input_weekday_returns_monday() {
+        let dt = parse_range_input(fixture_tz(), "monday").unwrap();
+        assert_eq!(dt.weekday(), Weekday::Mon);
+    }
+
+    #[test]
+    fn parse_range_input_rejects_garbage() {
+        let err = parse_range_input(fixture_tz(), "not-a-date").unwrap_err();
+        assert!(err.contains("unrecognized"));
     }
 }

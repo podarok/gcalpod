@@ -1,4 +1,8 @@
-use std::{env, error::Error, path::{Path, PathBuf}};
+use std::{
+    env,
+    error::Error,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{Context, Result};
 use chrono_tz::Tz;
@@ -41,9 +45,9 @@ async fn resolve_secret(
 
     if let Ok(custom) = env::var("GCAL_SECRET_FILE") {
         let path = PathBuf::from(&custom);
-        let secret = read_google_secret(&path).await.with_context(|| {
-            format!("GCAL_SECRET_FILE={} could not be read", path.display())
-        })?;
+        let secret = read_google_secret(&path)
+            .await
+            .with_context(|| format!("GCAL_SECRET_FILE={} could not be read", path.display()))?;
         return Ok((secret, SecretSource::EnvFile(path)));
     }
 
@@ -70,16 +74,18 @@ async fn resolve_secret(
     .into())
 }
 
-fn build_secret(client_id: &str, client_secret: &str, project_id: Option<String>) -> ApplicationSecret {
+fn build_secret(
+    client_id: &str,
+    client_secret: &str,
+    project_id: Option<String>,
+) -> ApplicationSecret {
     ApplicationSecret {
         client_id: client_id.to_string(),
         client_secret: client_secret.to_string(),
         auth_uri: "https://accounts.google.com/o/oauth2/auth".to_string(),
         token_uri: "https://accounts.google.com/o/oauth2/token".to_string(),
         redirect_uris: vec!["urn:ietf:wg:oauth:2.0:oob".to_string()],
-        auth_provider_x509_cert_url: Some(
-            "https://www.googleapis.com/oauth2/v1/certs".to_string(),
-        ),
+        auth_provider_x509_cert_url: Some("https://www.googleapis.com/oauth2/v1/certs".to_string()),
         project_id,
         client_email: None,
         client_x509_cert_url: None,
@@ -111,19 +117,24 @@ pub struct AuthOptions {
 async fn build_authenticator(
     profile: &Profile,
     opts: &AuthOptions,
-) -> Result<
-    yup_oauth2::authenticator::Authenticator<HttpsConnector<HttpConnector>>,
-    Box<dyn Error>,
-> {
+) -> Result<yup_oauth2::authenticator::Authenticator<HttpsConnector<HttpConnector>>, Box<dyn Error>>
+{
     let (secret, source) = resolve_secret(profile).await?;
 
     if env::var("GCAL_VERBOSE").ok().as_deref() == Some("1") {
         eprintln!("gcal: profile '{}'", profile.name);
         match &source {
-            SecretSource::Env => eprintln!("gcal: OAuth secret from env (GCAL_CLIENT_ID/GCAL_CLIENT_SECRET)"),
-            SecretSource::EnvFile(p) => eprintln!("gcal: OAuth secret from GCAL_SECRET_FILE={}", p.display()),
+            SecretSource::Env => {
+                eprintln!("gcal: OAuth secret from env (GCAL_CLIENT_ID/GCAL_CLIENT_SECRET)")
+            }
+            SecretSource::EnvFile(p) => {
+                eprintln!("gcal: OAuth secret from GCAL_SECRET_FILE={}", p.display())
+            }
             SecretSource::ProfileFile(p) => eprintln!("gcal: OAuth secret from {}", p.display()),
-            SecretSource::LegacyFile(p) => eprintln!("gcal: OAuth secret from legacy {} (run any cmd as profile 'default' to migrate)", p.display()),
+            SecretSource::LegacyFile(p) => eprintln!(
+                "gcal: OAuth secret from legacy {} (run any cmd as profile 'default' to migrate)",
+                p.display()
+            ),
         }
     }
 
@@ -173,17 +184,15 @@ pub async fn auth(
         Ok(_) => {}
         Err(e) => println!("Authentication error: {:?}", e),
     }
-    let client = hyper_util::client::legacy::Client::builder(
-        hyper_util::rt::TokioExecutor::new()
-    )
-    .build(
-        hyper_rustls::HttpsConnectorBuilder::new()
-            .with_native_roots()
-            .unwrap()
-            .https_or_http()
-            .enable_http1()
-            .build()
-    );
+    let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+        .build(
+            hyper_rustls::HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .unwrap()
+                .https_or_http()
+                .enable_http1()
+                .build(),
+        );
 
     let hub = CalendarHub::new(client, auth);
     Ok(hub)

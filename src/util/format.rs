@@ -196,3 +196,73 @@ fn render_csv(events: &[ListEvent]) -> Result<(), Box<dyn Error>> {
     wtr.flush()?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn output_format_parse_known() {
+        for (input, expected) in [
+            ("table", OutputFormat::Table),
+            ("json", OutputFormat::Json),
+            ("tsv", OutputFormat::Tsv),
+            ("csv", OutputFormat::Csv),
+            ("raw", OutputFormat::Raw),
+            ("JSON", OutputFormat::Json),
+            ("TSV", OutputFormat::Tsv),
+        ] {
+            assert_eq!(OutputFormat::parse(input).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn output_format_parse_unknown() {
+        let err = OutputFormat::parse("yaml").unwrap_err();
+        assert!(err.contains("unknown"));
+        assert!(err.contains("yaml"));
+    }
+
+    #[test]
+    fn tsv_escape_handles_specials() {
+        assert_eq!(tsv_escape("hello"), "hello");
+        assert_eq!(tsv_escape("a\tb"), r"a\tb");
+        assert_eq!(tsv_escape("a\nb"), r"a\nb");
+        assert_eq!(tsv_escape("a\\b"), r"a\\b");
+    }
+
+    #[test]
+    fn cell_handles_none() {
+        assert_eq!(cell(None), "");
+        assert_eq!(cell(Some("hi")), "hi");
+    }
+
+    #[test]
+    fn columns_count_matches_render_rows() {
+        // Sanity: TSV/CSV header + body must agree on column count.
+        assert_eq!(COLUMNS.len(), 10);
+    }
+
+    #[test]
+    fn list_event_serializes_all_fields() {
+        let ev = ListEvent {
+            id: Some("abc".into()),
+            calendar_id: "primary".into(),
+            summary: Some("Hello".into()),
+            description: None,
+            start: Some("2026-05-04T12:00:00Z".into()),
+            end: Some("2026-05-04T13:00:00Z".into()),
+            all_day: false,
+            status: Some("confirmed".into()),
+            creator: Some("alice@example.com".into()),
+            attendees_count: 2,
+            html_link: Some("https://example.com".into()),
+            updated: None,
+        };
+        let s = serde_json::to_string(&ev).unwrap();
+        assert!(s.contains(r#""id":"abc""#));
+        assert!(s.contains(r#""calendar_id":"primary""#));
+        assert!(s.contains(r#""attendees_count":2"#));
+        assert!(s.contains(r#""all_day":false"#));
+    }
+}

@@ -24,13 +24,7 @@ pub struct CalendarSummary {
     pub selected: bool,
 }
 
-const COLUMNS: &[&str] = &[
-    "id",
-    "summary",
-    "access_role",
-    "primary",
-    "timezone",
-];
+const COLUMNS: &[&str] = &["id", "summary", "access_role", "primary", "timezone"];
 
 pub async fn run(
     hub: &CalendarHub<HttpsConnector<HttpConnector>>,
@@ -151,7 +145,11 @@ fn render_table(items: &[CalendarSummary]) -> Result<(), Box<dyn Error>> {
             cell(c.id.as_deref()),
             cell(c.summary.as_deref()),
             cell(c.access_role.as_deref()),
-            if c.primary { "✓".to_string() } else { "".to_string() },
+            if c.primary {
+                "✓".to_string()
+            } else {
+                "".to_string()
+            },
             cell(c.timezone.as_deref()),
         ]);
     }
