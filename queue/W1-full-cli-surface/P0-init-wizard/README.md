@@ -49,4 +49,26 @@ gcal init --profile demo
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Files:
+- `src/commands/init.rs` (new) — `run(profile)` walks user through
+  4 Google Console URLs (project create, enable Calendar API,
+  consent screen, credentials), prompts for downloaded JSON path,
+  validates `installed.client_id` + `installed.client_secret` shape,
+  rejects Web-app shape with hint, moves file to
+  `profile.secret_path()`, runs `auth login` at the end.
+- `src/commands/mod.rs` — register `init`.
+- `src/main.rs` — register `init` clap subcommand, dispatch
+  before `calendar::auth(&prof)` (init triggers its own login).
+
+Skipped optional `dialoguer` + `webbrowser` deps to keep dep
+footprint small; uses `std::io::stdin` for prompts. URLs printed
+for user to click — works on headless / SSH terminals too.
+
+JSON validation rejects Web client (`web` section present without
+`installed`) with message: "file is for a Web client. Recreate as
+'Desktop app' type". Empty client_id/secret also rejected.
+
+Smoke: `gcal init --help` exits 0. Full interactive flow gated by
+stdin → not auto-tested in this commit; manual verification owner-side.

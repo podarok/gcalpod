@@ -177,6 +177,10 @@ async fn main() {
                 ),
         )
         .subcommand(
+            Command::new("init")
+                .about("Interactive setup wizard for a new OAuth profile"),
+        )
+        .subcommand(
             Command::new("calendars")
                 .about("List or inspect calendars accessible to the active profile")
                 .subcommand_required(true)
@@ -225,7 +229,15 @@ async fn main() {
         eprintln!("Warning: legacy migration failed - {}", e);
     }
 
-    // Subcommands that don't need a CalendarHub run before auth().
+    // Subcommands that don't need a pre-built CalendarHub run before auth().
+    if let Some(("init", _)) = matches.subcommand() {
+        if let Err(e) = commands::init::run(&prof).await {
+            eprintln!("Error during init - {}", e);
+            std::process::exit(1);
+        }
+        return;
+    }
+
     if let Some(("auth", auth_m)) = matches.subcommand() {
         match auth_m.subcommand() {
             Some(("login", login_m)) => {

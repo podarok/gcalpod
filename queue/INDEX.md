@@ -20,7 +20,7 @@ within each section. Mark status next to each.
 
 | Phase | Status | Path |
 |---|---|---|
-| `init` wizard | pending | [`W1-full-cli-surface/P0-init-wizard/README.md`](W1-full-cli-surface/P0-init-wizard/README.md) |
+| `init` wizard | done | [`W1-full-cli-surface/P0-init-wizard/README.md`](W1-full-cli-surface/P0-init-wizard/README.md) |
 | `config get/set` | pending | [`W1-full-cli-surface/P1-config-cmds/README.md`](W1-full-cli-surface/P1-config-cmds/README.md) |
 | `agenda` + `search` | pending | [`W1-full-cli-surface/P2-agenda-search/README.md`](W1-full-cli-surface/P2-agenda-search/README.md) |
 | `edit` + `delete` | pending | [`W1-full-cli-surface/P3-edit-delete/README.md`](W1-full-cli-surface/P3-edit-delete/README.md) |
