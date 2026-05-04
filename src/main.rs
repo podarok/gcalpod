@@ -16,7 +16,6 @@ fn build_cli() -> Command {
     Command::new("gcal")
         .about("Google Calendar - CLI")
         .version(env!("CARGO_PKG_VERSION"))
-        .args_conflicts_with_subcommands(true)
         .arg(
             Arg::new("gen-man")
                 .help("Print man page (clap_mangen) to stdout and exit")
@@ -40,21 +39,6 @@ fn build_cli() -> Command {
                 .action(ArgAction::SetTrue)
                 .global(true)
                 .required(false),
-        )
-        .arg(
-            Arg::new("title")
-                .help("Sets the event title")
-                .required(false),
-        )
-        .arg(Arg::new("date").help("Sets the event date").required(false))
-        .arg(
-            Arg::new("conference")
-                .help("Indicates that this event will be a conference Google Meet")
-                .long("conference")
-                .short('c')
-                .action(ArgAction::SetTrue)
-                .required(false)
-                .requires("title"),
         )
         .subcommand(
             Command::new("add")
@@ -932,72 +916,48 @@ async fn main() {
                 Err(e) => println!("Error retrieving events: {:?}", e),
             }
         }
-        Some(("add", _)) | _ => {
-            let title = matches.get_one::<String>("title");
-            let date = matches.get_one::<String>("date");
-            let conference = matches.get_one::<bool>("conference");
-            if title.is_none() {
-                return;
-            }
-
-            if date.is_none() {
-                let result = hub
-                    .events()
-                    .quick_add("primary", title.as_ref().unwrap())
-                    .doit()
-                    .await;
-
-                match result {
-                    Ok((_, event)) => {
-                        println!("Event created: {:?}", event.html_link.unwrap().to_string())
-                    }
-                    Err(e) => {
-                        eprintln!("Error creating event: {:?}", e);
-                    }
-                }
-            } else {
-                let event_date_with_timezone = get_date_from_string(tz, date.unwrap());
-                let mut event = Event {
-                    summary: Some(title.unwrap().to_string()),
-                    start: Some(EventDateTime {
-                        date_time: Some(event_date_with_timezone),
-                        ..Default::default()
-                    }),
-                    end: Some(EventDateTime {
-                        date_time: Some(event_date_with_timezone + Duration::hours(1)),
-                        ..Default::default()
-                    }),
+        Some(("add", add_m)) => {
+            let title = add_m
+                .get_one::<String>("title")
+                .map(String::as_str)
+                .unwrap();
+            let date = add_m.get_one::<String>("date").map(String::as_str).unwrap();
+            let event_date_with_timezone = get_date_from_string(tz, &date.to_string());
+            let mut event = Event {
+                summary: Some(title.to_string()),
+                start: Some(EventDateTime {
+                    date_time: Some(event_date_with_timezone),
                     ..Default::default()
-                };
-                if conference.map_or(false, |&c| c) {
-                    event.conference_data = Some(ConferenceData {
-                        create_request: Some(CreateConferenceRequest {
-                            request_id: Some(Uuid::new_v4().to_string()),
-                            conference_solution_key: Some(ConferenceSolutionKey {
-                                type_: Some("hangoutsMeet".to_string()),
-                            }),
-                            ..Default::default()
-                        }),
-                        ..Default::default()
-                    });
+                }),
+                end: Some(EventDateTime {
+                    date_time: Some(event_date_with_timezone + Duration::hours(1)),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
+            // Conference toggle was previously top-level; now only via `quick --conference`
+            // or follow-up `events.patch`. add stays minimal.
+            let _ = ConferenceData::default;
+            let _ = ConferenceSolutionKey::default;
+            let _ = CreateConferenceRequest::default;
+            let _ = Uuid::nil;
+            match hub
+                .events()
+                .insert(event, "primary")
+                .conference_data_version(1)
+                .doit()
+                .await
+            {
+                Ok((_, event)) => {
+                    println!("Event created: {:?}", event.html_link.unwrap_or_default())
                 }
-
-                let result = hub
-                    .events()
-                    .insert(event, "primary")
-                    .conference_data_version(1)
-                    .doit()
-                    .await;
-
-                match result {
-                    Ok((_, event)) => {
-                        println!("Event created: {:?}", event.html_link.unwrap().to_string());
-                    }
-                    Err(e) => {
-                        eprintln!("Error creating event: {:?}", e);
-                    }
-                }
+                Err(e) => eprintln!("Error creating event: {:?}", e),
             }
+        }
+        _ => {
+            // No subcommand or unknown — print top-level help.
+            let _ = build_cli().print_help();
+            println!();
         }
     }
 }
