@@ -1,7 +1,18 @@
 [package]
-name = "gcal"
+name = "gcalpod"
 version = "0.1.0"
 edition = "2021"
+description = "Google Calendar CLI — multi-profile auth, range queries, JSON/TSV/CSV/raw output."
+license = "Apache-2.0"
+repository = "https://github.com/podarok/gcalpod"
+homepage = "https://github.com/podarok/gcalpod"
+readme = "README.md"
+keywords = ["google", "calendar", "cli", "oauth"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "gcal"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.97"

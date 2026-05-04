@@ -1,11 +1,18 @@
-# Google Calendar CLI - gcal
+# gcalpod — Google Calendar CLI
 
-![example workflow](https://github.com/rust-dd/google-calendar-cli/actions/workflows/rust.yml/badge.svg)
+![rust](https://github.com/podarok/gcalpod/actions/workflows/rust.yml/badge.svg)
 
-The Google Calendar CLI (gcal) is a command-line interface (CLI) tool written in Rust, designed to make managing your Google Calendar from the terminal both quick and easy. Whether you're adding new events or listing existing ones, gcal allows you to do it all without leaving your terminal.
+`gcalpod` is a Rust command-line interface for Google Calendar. The
+binary is invoked as `gcal`; the package + repository name is
+`gcalpod`. Add events, list events, manage multiple profiles — all
+without leaving your terminal.
 
+> Derivative of [`rust-dd/google-calendar-cli`](https://github.com/rust-dd/google-calendar-cli).
+> Apache 2.0 license preserved. Substantial modifications listed in
+> [`NOTICE.md`](NOTICE.md). Active work plan in [`queue/`](queue/).
 
-*Note: This project is currently in its early stages. While it is functional, many features are still under development. Consider it a playground for exploration and experimentation.*
+*Note: Early-stage project. Many features still in development. See
+[`queue/INDEX.md`](queue/INDEX.md) for the current roadmap.*
 
 ![Screenshot](docs/screenshot.png)
 
@@ -15,14 +22,13 @@ Happy scheduling!
 
 ## Installation
 
-To get started with gcal, clone the repository and build the project using Cargo:
-
-
 ```sh
-git clone git@github.com:zeldan/google-calendar-cli.git
-cd google-calendar-cli
-cargo build && cargo install --path . --locked
+git clone git@github.com:podarok/gcalpod.git
+cd gcalpod
+cargo build --release && cargo install --path . --locked
 ```
+
+After install, the binary is `gcal` (in `~/.cargo/bin/gcal`).
 
 ## Usage
 
