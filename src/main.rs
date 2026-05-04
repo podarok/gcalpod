@@ -181,6 +181,30 @@ async fn main() {
                 .about("Interactive setup wizard for a new OAuth profile"),
         )
         .subcommand(
+            Command::new("config")
+                .about("Read/write ~/.gcal/config.toml")
+                .subcommand_required(true)
+                .arg_required_else_help(true)
+                .subcommand(
+                    Command::new("get")
+                        .about("Print value for <key>")
+                        .arg(Arg::new("key").required(true)),
+                )
+                .subcommand(
+                    Command::new("set")
+                        .about("Set <key> = <value>")
+                        .arg(Arg::new("key").required(true))
+                        .arg(Arg::new("value").required(true)),
+                )
+                .subcommand(
+                    Command::new("unset")
+                        .about("Remove <key>")
+                        .arg(Arg::new("key").required(true)),
+                )
+                .subcommand(Command::new("list").about("Print all keys"))
+                .subcommand(Command::new("path").about("Print absolute path of config.toml")),
+        )
+        .subcommand(
             Command::new("calendars")
                 .about("List or inspect calendars accessible to the active profile")
                 .subcommand_required(true)
@@ -233,6 +257,32 @@ async fn main() {
     if let Some(("init", _)) = matches.subcommand() {
         if let Err(e) = commands::init::run(&prof).await {
             eprintln!("Error during init - {}", e);
+            std::process::exit(1);
+        }
+        return;
+    }
+
+    if let Some(("config", cfg_m)) = matches.subcommand() {
+        let action = match cfg_m.subcommand() {
+            Some(("get", m)) => commands::config_cmd::ConfigAction::Get {
+                key: m.get_one::<String>("key").unwrap().clone(),
+            },
+            Some(("set", m)) => commands::config_cmd::ConfigAction::Set {
+                key: m.get_one::<String>("key").unwrap().clone(),
+                value: m.get_one::<String>("value").unwrap().clone(),
+            },
+            Some(("unset", m)) => commands::config_cmd::ConfigAction::Unset {
+                key: m.get_one::<String>("key").unwrap().clone(),
+            },
+            Some(("list", _)) => commands::config_cmd::ConfigAction::List,
+            Some(("path", _)) => commands::config_cmd::ConfigAction::Path,
+            _ => {
+                eprintln!("Unknown config subcommand. Run `gcal config --help`.");
+                std::process::exit(2);
+            }
+        };
+        if let Err(e) = commands::config_cmd::run(action).await {
+            eprintln!("Error in config: {}", e);
             std::process::exit(1);
         }
         return;
