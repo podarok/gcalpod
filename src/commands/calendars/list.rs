@@ -53,7 +53,8 @@ pub async fn run(
         OutputFormat::Raw => render_raw(&items),
         OutputFormat::Table => render_table(&summaries),
         OutputFormat::Conky => Err(
-            "calendars list does not support --format conky; use list/agenda/search instead.".into(),
+            "calendars list does not support --format conky; use list/agenda/search instead."
+                .into(),
         ),
     }
 }

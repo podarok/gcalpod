@@ -30,9 +30,7 @@ pub async fn run(profile: &Profile, shared: bool) -> Result<(), Box<dyn Error>> 
     println!();
     println!("== gcal init wizard ==");
     if shared {
-        println!(
-            "Shared mode: secret reused by every profile. Token still per-profile."
-        );
+        println!("Shared mode: secret reused by every profile. Token still per-profile.");
         println!(
             "Active profile '{}' will get its own token at {}.",
             profile.name,

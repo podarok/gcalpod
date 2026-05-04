@@ -6,9 +6,30 @@ The project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [1.0.0] — 2026-05-04
 
-First stable release after the W3 detach + rename. Scope corresponds
-to queue waves W0 (MVP) + W1 (full CLI surface) + W2-P0 (remind) +
-W5-P2 step-1 (failure-first + recovery tee).
+First stable release. All planned features for v1.0.0 landed:
+multi-profile auth (W0), full CLI surface (W1), remind + conky +
+man page (W2), detach + rename + Apache 2.0 attribution (W3),
+RTK failure-first + verbose (W5), hybrid grid/agenda renderer
+with `--style` + `--lineart` (W7), shared OAuth secret across
+profiles (W8), token refresh (epic-03).
+
+Working knowledge transferred upstream to
+[`template_for_agents/process-knowledge-base/gcalpod-queue/`](https://github.com/ITCare-Company/template_for_agents/tree/main/process-knowledge-base/gcalpod-queue);
+local `queue/` removed from this repo as the project graduates from
+in-flight planning to stable release.
+
+### License
+
+Relicensed original modifications under [PolyForm Noncommercial 1.0.0](LICENSE)
+**plus** [gcalpod Sustainable License Addendum v1 (gSL-v1)](LICENSE-ADDENDUM.md).
+Apache 2.0 retained for upstream-derived portions per Apache 2.0 §4.
+
+The addendum adds five permissions on top of PolyForm Noncommercial:
+A. Sponsorship Tier Grant ($5/mo+ → automatic commercial use).
+B. Solo / Micro Carveout (≤ 2 people, < $20k revenue, ≤ $20k raised).
+C. Apache 2.0 Time-Bomb (each release → Apache 2.0 after 4y).
+D. Package Distribution Carveout (distros + registries free).
+E. Contribution Grant (contributors get commercial rights).
 
 ### Added
 

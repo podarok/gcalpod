@@ -1,6 +1,6 @@
-use chrono::{DateTime, Datelike, Duration, Local, Timelike, TimeZone, Utc};
+use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Timelike, Utc};
 use chrono_tz::Tz;
-use comfy_table::presets::{UTF8_BORDERS_ONLY, UTF8_FULL, ASCII_FULL};
+use comfy_table::presets::{ASCII_FULL, UTF8_BORDERS_ONLY, UTF8_FULL};
 use comfy_table::{Attribute, Cell, Color, ContentArrangement, Table};
 use google_calendar3::api::Event;
 use unicode_width::UnicodeWidthStr;
@@ -18,7 +18,10 @@ impl LayoutStyle {
             "auto" => Ok(Self::Auto),
             "grid" => Ok(Self::Grid),
             "agenda" => Ok(Self::Agenda),
-            other => Err(format!("unknown --style '{}'. Try: auto, grid, agenda.", other)),
+            other => Err(format!(
+                "unknown --style '{}'. Try: auto, grid, agenda.",
+                other
+            )),
         }
     }
 }
@@ -36,7 +39,10 @@ impl LineArt {
             "unicode" => Ok(Self::Unicode),
             "fancy" => Ok(Self::Fancy),
             "ascii" => Ok(Self::Ascii),
-            other => Err(format!("unknown --lineart '{}'. Try: unicode, fancy, ascii.", other)),
+            other => Err(format!(
+                "unknown --lineart '{}'. Try: unicode, fancy, ascii.",
+                other
+            )),
         }
     }
 
@@ -145,7 +151,12 @@ fn render_agenda_grouped(
         e.start
             .as_ref()
             .and_then(|s| s.date_time.map(|d| d.timestamp()))
-            .or_else(|| e.start.as_ref().and_then(|s| s.date.map(|d| d.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp())))
+            .or_else(|| {
+                e.start.as_ref().and_then(|s| {
+                    s.date
+                        .map(|d| d.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp())
+                })
+            })
             .unwrap_or(0)
     });
 
@@ -173,7 +184,10 @@ fn render_agenda_grouped(
             day.format("%b"),
             day.year()
         );
-        let underline_len = (cols as usize).saturating_sub(header_text.len()).min(60).max(8);
+        let underline_len = (cols as usize)
+            .saturating_sub(header_text.len())
+            .min(60)
+            .max(8);
         let underline = "─".repeat(underline_len);
         let today_marker = if is_today(day, tz) { " ← today" } else { "" };
         println!("{}{} {}", header_text, today_marker, underline);
@@ -185,10 +199,7 @@ fn render_agenda_grouped(
             let mut all_day_seen = false;
             for ev in day_events.iter().filter(|e| is_all_day(e)) {
                 let summary = ev.summary.as_deref().unwrap_or("(no title)");
-                println!(
-                    "  [ALL DAY]   {}",
-                    truncate_to_width(summary, max_summary)
-                );
+                println!("  [ALL DAY]   {}", truncate_to_width(summary, max_summary));
                 all_day_seen = true;
                 total_rendered += 1;
             }
@@ -201,7 +212,9 @@ fn render_agenda_grouped(
                 let summary = ev.summary.as_deref().unwrap_or("(no title)");
                 if let Some(s) = s {
                     let s_local = tz.from_utc_datetime(&s.naive_utc());
-                    let e_local = e.map(|t| tz.from_utc_datetime(&t.naive_utc())).unwrap_or(s_local);
+                    let e_local = e
+                        .map(|t| tz.from_utc_datetime(&t.naive_utc()))
+                        .unwrap_or(s_local);
                     println!(
                         "  {:02}:{:02}-{:02}:{:02}  {}",
                         s_local.hour(),
@@ -270,12 +283,7 @@ fn render_week_grid(
         let all_day_text: Vec<String> = day_events
             .iter()
             .filter(|e| is_all_day(e))
-            .map(|e| {
-                truncate_to_width(
-                    e.summary.as_deref().unwrap_or("(no title)"),
-                    cell_width,
-                )
-            })
+            .map(|e| truncate_to_width(e.summary.as_deref().unwrap_or("(no title)"), cell_width))
             .collect();
         all_day_row.push(if all_day_text.is_empty() {
             "·".to_string()
@@ -313,8 +321,16 @@ fn render_week_grid(
                 pm.push(line);
             }
         }
-        am_row.push(if am.is_empty() { "·".to_string() } else { am.join("\n") });
-        pm_row.push(if pm.is_empty() { "·".to_string() } else { pm.join("\n") });
+        am_row.push(if am.is_empty() {
+            "·".to_string()
+        } else {
+            am.join("\n")
+        });
+        pm_row.push(if pm.is_empty() {
+            "·".to_string()
+        } else {
+            pm.join("\n")
+        });
     }
 
     table.set_header(header);
