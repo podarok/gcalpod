@@ -61,20 +61,26 @@ impl Profile {
     /// has no existing secret/store, and (c) legacy files exist.
     ///
     /// Move (not copy) — single source of truth. Logs one stderr line on success.
+    ///
+    /// If `~/.gcal/shared.flag` exists, the legacy `secret.json` is treated as
+    /// the shared OAuth client across every profile and is **not** moved.
+    /// Only `store.json` migrates in shared mode.
     pub fn migrate_legacy_if_needed(&self) -> Result<(), Box<dyn Error>> {
         if self.name != "default" {
             return Ok(());
         }
         self.ensure_dir()?;
 
-        let legacy_secret = file::get_absolute_path(".gcal/secret.json")?;
+        let legacy_secret = Self::shared_secret_path()?;
         let legacy_store = file::get_absolute_path(".gcal/store.json")?;
+        let shared_flag = Self::shared_flag_path()?;
+        let shared_mode = shared_flag.is_file();
 
         let target_secret = self.secret_path();
         let target_store = self.store_path();
 
         let mut moved = false;
-        if legacy_secret.is_file() && !target_secret.exists() {
+        if !shared_mode && legacy_secret.is_file() && !target_secret.exists() {
             std::fs::rename(&legacy_secret, &target_secret).with_context(|| {
                 format!(
                     "Failed to move {} -> {}",
@@ -95,12 +101,32 @@ impl Profile {
             moved = true;
         }
         if moved {
-            eprintln!(
-                "gcal: migrated legacy ~/.gcal/{{secret,store}}.json -> {}",
-                self.dir.display()
-            );
+            if shared_mode {
+                eprintln!(
+                    "gcal: migrated legacy store.json -> {} (shared secret retained at {})",
+                    self.dir.display(),
+                    legacy_secret.display()
+                );
+            } else {
+                eprintln!(
+                    "gcal: migrated legacy ~/.gcal/{{secret,store}}.json -> {}",
+                    self.dir.display()
+                );
+            }
         }
         Ok(())
+    }
+
+    /// Path to the shared OAuth client JSON (single secret reused by every
+    /// profile when `shared.flag` is present).
+    pub fn shared_secret_path() -> Result<PathBuf, Box<dyn Error>> {
+        file::get_absolute_path(".gcal/secret.json")
+    }
+
+    /// Sentinel file that toggles shared-secret mode. Created by
+    /// `gcal init --shared`. Empty file; presence is what counts.
+    pub fn shared_flag_path() -> Result<PathBuf, Box<dyn Error>> {
+        file::get_absolute_path(".gcal/shared.flag")
     }
 }
 
@@ -176,5 +202,13 @@ mod tests {
         assert!(p.dir.ends_with(".gcal/profiles/work"));
         assert!(p.secret_path().ends_with(".gcal/profiles/work/secret.json"));
         assert!(p.store_path().ends_with(".gcal/profiles/work/store.json"));
+    }
+
+    #[test]
+    fn shared_paths_under_dotgcal() {
+        let secret = Profile::shared_secret_path().unwrap();
+        let flag = Profile::shared_flag_path().unwrap();
+        assert!(secret.ends_with(".gcal/secret.json"));
+        assert!(flag.ends_with(".gcal/shared.flag"));
     }
 }

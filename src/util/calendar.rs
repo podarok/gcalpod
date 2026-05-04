@@ -22,7 +22,8 @@ use crate::profile::Profile;
 /// 1. `GCAL_CLIENT_ID` + `GCAL_CLIENT_SECRET` env vars (in-memory secret).
 /// 2. `GCAL_SECRET_FILE` env var pointing to a JSON file.
 /// 3. `~/.gcal/profiles/<active>/secret.json` (per-profile).
-/// 4. `~/.gcal/secret.json` (legacy fallback for un-migrated installs).
+/// 4. `~/.gcal/secret.json` (shared / legacy: one OAuth client across
+///    every profile, separate token store per profile).
 ///
 /// If none are configured, `auth()` returns an error directing the
 /// user to `docs/custom_auth.md`. There is no built-in fallback —
@@ -32,7 +33,7 @@ enum SecretSource {
     Env,
     EnvFile(PathBuf),
     ProfileFile(PathBuf),
-    LegacyFile(PathBuf),
+    Shared(PathBuf),
 }
 
 async fn resolve_secret(
@@ -57,10 +58,10 @@ async fn resolve_secret(
         return Ok((secret, SecretSource::ProfileFile(profile_secret)));
     }
 
-    let legacy_path: PathBuf = file::get_absolute_path(".gcal/secret.json")?;
-    if legacy_path.is_file() {
-        let secret = read_google_secret(&legacy_path).await?;
-        return Ok((secret, SecretSource::LegacyFile(legacy_path)));
+    let shared_path = Profile::shared_secret_path()?;
+    if shared_path.is_file() {
+        let secret = read_google_secret(&shared_path).await?;
+        return Ok((secret, SecretSource::Shared(shared_path)));
     }
 
     Err(anyhow::anyhow!(
@@ -131,8 +132,8 @@ async fn build_authenticator(
                 eprintln!("gcal: OAuth secret from GCAL_SECRET_FILE={}", p.display())
             }
             SecretSource::ProfileFile(p) => eprintln!("gcal: OAuth secret from {}", p.display()),
-            SecretSource::LegacyFile(p) => eprintln!(
-                "gcal: OAuth secret from legacy {} (run any cmd as profile 'default' to migrate)",
+            SecretSource::Shared(p) => eprintln!(
+                "gcal: OAuth secret from shared {} (one client across profiles)",
                 p.display()
             ),
         }

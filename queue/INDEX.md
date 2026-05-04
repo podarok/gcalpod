@@ -83,7 +83,7 @@ within each section. Mark status next to each.
 | Phase | Status | Path |
 |---|---|---|
 | Design | done | [`W8-shared-secret/P0-design/README.md`](W8-shared-secret/P0-design/README.md) |
-| Implement | pending | [`W8-shared-secret/P1-implement/README.md`](W8-shared-secret/P1-implement/README.md) |
+| Implement | done | [`W8-shared-secret/P1-implement/README.md`](W8-shared-secret/P1-implement/README.md) |
 
 ## Cross-cutting epics
 

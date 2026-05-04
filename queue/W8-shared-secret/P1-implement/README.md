@@ -41,4 +41,25 @@ gcal auth status --all             # both ready, shared secret
 
 ## Result
 
-_Filled when shipped._
+Implemented 2026-05-04 on `main`.
+
+Files:
+- `src/profile.rs` — `Profile::shared_secret_path()` +
+  `Profile::shared_flag_path()` exposed. `migrate_legacy_if_needed()`
+  reads `~/.gcal/shared.flag`; in shared mode, only `store.json`
+  migrates (secret stays at `~/.gcal/secret.json`).
+- `src/commands/init.rs` — `run(profile, shared)` signature; saves
+  secret to shared path + writes sentinel when `shared=true`.
+- `src/main.rs` — `init --shared` clap flag wired into dispatch.
+- `src/util/calendar.rs` — `SecretSource::LegacyFile` renamed to
+  `Shared`. Verbose log line updated.
+- Unit test: `shared_paths_under_dotgcal`.
+
+47 tests pass. Build clean.
+
+Workflow:
+```
+gcal init --shared --profile default
+gcal auth login --profile work       # shared secret, own token
+gcal auth login --profile personal   # shared secret, own token
+```

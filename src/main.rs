@@ -190,7 +190,14 @@ async fn main() {
         )
         .subcommand(
             Command::new("init")
-                .about("Interactive setup wizard for a new OAuth profile"),
+                .about("Interactive setup wizard for a new OAuth profile")
+                .arg(
+                    Arg::new("shared")
+                        .help("Save the OAuth client at ~/.gcal/secret.json (reused by every profile)")
+                        .long("shared")
+                        .action(ArgAction::SetTrue)
+                        .required(false),
+                ),
         )
         .subcommand(
             Command::new("config")
@@ -380,8 +387,9 @@ async fn main() {
     }
 
     // Subcommands that don't need a pre-built CalendarHub run before auth().
-    if let Some(("init", _)) = matches.subcommand() {
-        if let Err(e) = commands::init::run(&prof).await {
+    if let Some(("init", init_m)) = matches.subcommand() {
+        let shared = init_m.get_flag("shared");
+        if let Err(e) = commands::init::run(&prof, shared).await {
             util::recovery::report_error("init", &e);
             std::process::exit(1);
         }

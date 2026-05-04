@@ -26,14 +26,25 @@ struct InstalledSection {
     client_secret: String,
 }
 
-pub async fn run(profile: &Profile) -> Result<(), Box<dyn Error>> {
+pub async fn run(profile: &Profile, shared: bool) -> Result<(), Box<dyn Error>> {
     println!();
     println!("== gcal init wizard ==");
-    println!(
-        "Sets up profile '{}' under {}.",
-        profile.name,
-        profile.dir.display()
-    );
+    if shared {
+        println!(
+            "Shared mode: secret reused by every profile. Token still per-profile."
+        );
+        println!(
+            "Active profile '{}' will get its own token at {}.",
+            profile.name,
+            profile.store_path().display()
+        );
+    } else {
+        println!(
+            "Sets up profile '{}' under {}.",
+            profile.name,
+            profile.dir.display()
+        );
+    }
     println!();
     println!("You'll create your own Google Cloud OAuth client (~5 minutes,");
     println!("free for personal use). Step-by-step pages:");
@@ -77,9 +88,19 @@ pub async fn run(profile: &Profile) -> Result<(), Box<dyn Error>> {
             }
         }
 
-        let dst = profile.secret_path();
+        let dst = if shared {
+            Profile::shared_secret_path()?
+        } else {
+            profile.secret_path()
+        };
         std::fs::rename(&src, &dst).or_else(|_| std::fs::copy(&src, &dst).map(|_| ()))?;
         println!("gcal: secret saved to {}", dst.display());
+
+        if shared {
+            let flag = Profile::shared_flag_path()?;
+            std::fs::write(&flag, b"")?;
+            println!("gcal: shared mode enabled (sentinel: {}).", flag.display());
+        }
         break;
     }
 
