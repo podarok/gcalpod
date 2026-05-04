@@ -70,4 +70,24 @@ gcal auth logout --all --purge   # nukes everything
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Files:
+- `src/commands/auth/logout.rs` (new) — `LogoutArgs { all, purge }`,
+  per-profile + `--all` enumeration. Default removes `store.json` only;
+  `--purge` also removes `secret.json` + rmdir if empty.
+- `src/commands/auth/switch.rs` (new) — validates target profile dir
+  exists, updates `Config.active_profile`, atomic save.
+- `src/commands/auth/mod.rs` — export `logout`, `switch`.
+- `src/main.rs` — register `logout` + `switch` clap subcommands +
+  dispatch.
+
+OAuth server-side revoke deferred (best-effort): tokens expire
+naturally within ~1h; `--purge` removes local files which is
+sufficient for the MVP. Add explicit revoke in W1 if needed.
+
+Smoke verified:
+- `gcal auth switch nonexistent` → error with create hint.
+- `gcal auth switch default` → writes `~/.gcal/config.toml`
+  (`active_profile = "default"`).
+- `gcal auth logout --help` lists `--all`, `--purge`.

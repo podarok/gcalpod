@@ -110,6 +110,33 @@ async fn main() {
                                 .action(ArgAction::SetTrue)
                                 .required(false),
                         ),
+                )
+                .subcommand(
+                    Command::new("logout")
+                        .about("Remove the cached token (and secret with --purge)")
+                        .arg(
+                            Arg::new("all")
+                                .help("Log out every profile under ~/.gcal/profiles/")
+                                .long("all")
+                                .action(ArgAction::SetTrue)
+                                .required(false),
+                        )
+                        .arg(
+                            Arg::new("purge")
+                                .help("Also delete secret.json and the profile directory")
+                                .long("purge")
+                                .action(ArgAction::SetTrue)
+                                .required(false),
+                        ),
+                )
+                .subcommand(
+                    Command::new("switch")
+                        .about("Change the active profile in ~/.gcal/config.toml")
+                        .arg(
+                            Arg::new("target")
+                                .help("Profile name to activate")
+                                .required(true),
+                        ),
                 ),
         )
         .get_matches();
@@ -158,6 +185,25 @@ async fn main() {
                 };
                 if let Err(e) = commands::auth::status::run(&prof, args).await {
                     eprintln!("Error during status - {}", e);
+                    std::process::exit(1);
+                }
+                return;
+            }
+            Some(("logout", logout_m)) => {
+                let args = commands::auth::logout::LogoutArgs {
+                    all: logout_m.get_flag("all"),
+                    purge: logout_m.get_flag("purge"),
+                };
+                if let Err(e) = commands::auth::logout::run(&prof, args).await {
+                    eprintln!("Error during logout - {}", e);
+                    std::process::exit(1);
+                }
+                return;
+            }
+            Some(("switch", switch_m)) => {
+                let target = switch_m.get_one::<String>("target").unwrap();
+                if let Err(e) = commands::auth::switch::run(target).await {
+                    eprintln!("Error during switch - {}", e);
                     std::process::exit(1);
                 }
                 return;
