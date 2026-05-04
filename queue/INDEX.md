@@ -60,6 +60,23 @@ within each section. Mark status next to each.
 | Options proposal (owner gate) | done — Option C picked | [`W5-rtk-output/P1-options-proposal/README.md`](W5-rtk-output/P1-options-proposal/README.md) |
 | Implement | step-1 done; step-2/3 pending | [`W5-rtk-output/P2-implement/README.md`](W5-rtk-output/P2-implement/README.md) |
 
+## Stable release v1.0.0 (W6)
+
+| Phase | Status | Path |
+|---|---|---|
+| Changelog | done | [`W6-stable-release/P0-changelog/README.md`](W6-stable-release/P0-changelog/README.md) |
+| Version bump | done (1.0.0) | [`W6-stable-release/P1-version-bump/README.md`](W6-stable-release/P1-version-bump/README.md) |
+| Pre-flight gates | pending (test coverage in flight) | [`W6-stable-release/P2-preflight/README.md`](W6-stable-release/P2-preflight/README.md) |
+| Tag + release | blocked by pre-flight | [`W6-stable-release/P3-tag-and-release/README.md`](W6-stable-release/P3-tag-and-release/README.md) |
+
+## List output polish (W7)
+
+| Phase | Status | Path |
+|---|---|---|
+| Research | done | [`W7-output-polish/P0-research/README.md`](W7-output-polish/P0-research/README.md) |
+| Options (owner gate) | pending | [`W7-output-polish/P1-options/README.md`](W7-output-polish/P1-options/README.md) |
+| Implement | blocked by P1 | [`W7-output-polish/P2-implement/README.md`](W7-output-polish/P2-implement/README.md) |
+
 ## Cross-cutting epics
 
 | Epic | Path |
@@ -82,3 +99,5 @@ within each section. Mark status next to each.
 | W3 | [`W3-detach-rename/README.md`](W3-detach-rename/README.md) | [`DECISIONS.md`](W3-detach-rename/DECISIONS.md) |
 | W4 | [`W4-readme-refresh/README.md`](W4-readme-refresh/README.md) | [`DECISIONS.md`](W4-readme-refresh/DECISIONS.md) |
 | W5 | [`W5-rtk-output/README.md`](W5-rtk-output/README.md) | [`DECISIONS.md`](W5-rtk-output/DECISIONS.md) |
+| W6 | [`W6-stable-release/README.md`](W6-stable-release/README.md) | [`DECISIONS.md`](W6-stable-release/DECISIONS.md) |
+| W7 | [`W7-output-polish/README.md`](W7-output-polish/README.md) | [`DECISIONS.md`](W7-output-polish/DECISIONS.md) |
