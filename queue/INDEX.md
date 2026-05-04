@@ -35,16 +35,22 @@ within each section. Mark status next to each.
 | Formatters (conky / template) | pending | [`W2-polish/P1-formatters/README.md`](W2-polish/P1-formatters/README.md) |
 | Man page (clap_mangen) | pending | [`W2-polish/P2-man-page/README.md`](W2-polish/P2-man-page/README.md) |
 
-## Detach + rename (W3)
+## Detach + rename (W3) — DONE 2026-05-04
 
 | Phase | Status | Path |
 |---|---|---|
-| License audit | pending | [`W3-detach-rename/P0-license-audit/README.md`](W3-detach-rename/P0-license-audit/README.md) |
-| Name selection | pending | [`W3-detach-rename/P1-new-name-selection/README.md`](W3-detach-rename/P1-new-name-selection/README.md) |
-| Detach or recreate | pending | [`W3-detach-rename/P2-detach-or-recreate/README.md`](W3-detach-rename/P2-detach-or-recreate/README.md) |
-| Attribution preserve | pending | [`W3-detach-rename/P3-attribution-preserve/README.md`](W3-detach-rename/P3-attribution-preserve/README.md) |
-| Cargo rename | pending | [`W3-detach-rename/P4-cargo-rename/README.md`](W3-detach-rename/P4-cargo-rename/README.md) |
-| Update references | pending | [`W3-detach-rename/P5-update-references/README.md`](W3-detach-rename/P5-update-references/README.md) |
+| License audit | done | [`W3-detach-rename/P0-license-audit/README.md`](W3-detach-rename/P0-license-audit/README.md) |
+| Name selection | done (`gcalpod`) | [`W3-detach-rename/P1-new-name-selection/README.md`](W3-detach-rename/P1-new-name-selection/README.md) |
+| Detach or recreate | done (Path A — Leave fork network) | [`W3-detach-rename/P2-detach-or-recreate/README.md`](W3-detach-rename/P2-detach-or-recreate/README.md) |
+| Attribution preserve | done (NOTICE.md) | [`W3-detach-rename/P3-attribution-preserve/README.md`](W3-detach-rename/P3-attribution-preserve/README.md) |
+| Cargo rename | done | [`W3-detach-rename/P4-cargo-rename/README.md`](W3-detach-rename/P4-cargo-rename/README.md) |
+| Update references | done | [`W3-detach-rename/P5-update-references/README.md`](W3-detach-rename/P5-update-references/README.md) |
+
+## README refresh (W4)
+
+| Phase | Status | Path |
+|---|---|---|
+| Status-driven README | done | [`W4-readme-refresh/P0-status-driven-readme/README.md`](W4-readme-refresh/P0-status-driven-readme/README.md) |
 
 ## Cross-cutting epics
 
@@ -66,3 +72,4 @@ within each section. Mark status next to each.
 | W1 | [`W1-full-cli-surface/README.md`](W1-full-cli-surface/README.md) | [`DECISIONS.md`](W1-full-cli-surface/DECISIONS.md) |
 | W2 | [`W2-polish/README.md`](W2-polish/README.md) | [`DECISIONS.md`](W2-polish/DECISIONS.md) |
 | W3 | [`W3-detach-rename/README.md`](W3-detach-rename/README.md) | [`DECISIONS.md`](W3-detach-rename/DECISIONS.md) |
+| W4 | [`W4-readme-refresh/README.md`](W4-readme-refresh/README.md) | [`DECISIONS.md`](W4-readme-refresh/DECISIONS.md) |

@@ -4,8 +4,13 @@ Execution constraints for every epic + wave + phase in `queue/`.
 Adapted from
 [`gogs-cli-queue/RULES.md`](https://github.com/ITCare-Company/template_for_agents/blob/main/process-knowledge-base/gogs-cli-queue/RULES.md).
 
-**Diverges from gogs-cli-queue**: PRs **are** required (this is a
-fork repo with upstream review path). No squash merges (project policy).
+**Aligned with gogs-cli-queue**: **no PRs.** Commits land directly
+on `main`. One commit per feature. Push after owner ok.
+
+(Earlier draft required PRs because the repo was a fork. After the
+W3 detach + rename — now standalone `podarok/gcalpod` — the project
+moved to the gogs-cli-queue model: commit per feature on `main`,
+no PR overhead.)
 
 ## Dialogue gates
 
@@ -22,9 +27,11 @@ fork repo with upstream review path). No squash merges (project policy).
 
 ## Commit shape
 
-- One task = one commit. PRs created on `podarok/google-calendar-cli`
-  fork for review.
-- **No squash merges** (project policy). Use merge or fast-forward.
+- One task = one commit. Commits land directly on `main` of
+  `podarok/gcalpod`. **No PRs.** Push after owner "ok" / "вйо".
+- Optional short-lived feature branches for isolation are fine —
+  fast-forward into `main` (no merge commits, no squash) and
+  delete the branch afterwards.
 - Subject under 70 characters. Conventional Commits prefix:
   - `feat(auth): …` for `src/auth/*`
   - `feat(cli): …` / `fix(cli): …` for command surface
@@ -100,7 +107,7 @@ secrets stay only in `~/.gcal/` (never in repo).
 
 ## Default branch policy
 
-- All work lands on `main` of `podarok/google-calendar-cli` (fork).
-- Push to upstream `rust-dd/google-calendar-cli` only after owner
-  explicit ok per task / PR.
-- Never push directly to upstream without confirmation.
+- All work lands on `main` of `podarok/gcalpod` (standalone, no
+  longer a fork after W3 detach + rename).
+- No mirror back to `rust-dd/google-calendar-cli` (upstream relation
+  severed). Attribution preserved via `LICENSE` + `NOTICE.md` only.

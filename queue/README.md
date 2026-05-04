@@ -26,13 +26,14 @@ containing the plan. Each wave gates the next.
 | **W0-mvp-auth-list** | Smallest surface that pulls events for stm32 planning: `auth login/status/logout/switch`, `list --from --to --json`, `calendars list`. **Blocks W1.** | [`W0-mvp-auth-list/`](W0-mvp-auth-list/) |
 | W1-full-cli-surface | Polish: `init` wizard, `config get/set`, `agenda`, `search`, `edit`, `delete`, `import`, `quick`, conference flag. | [`W1-full-cli-surface/`](W1-full-cli-surface/) |
 | W2-polish | `remind`, formatter modes (conky / template), `clap_mangen` man page. | [`W2-polish/`](W2-polish/) |
-| W3-detach-rename | Detach fork + rename project + Apache 2.0 attribution. **Independent of W0/W1/W2** — can run in parallel. | [`W3-detach-rename/`](W3-detach-rename/) |
+| W3-detach-rename | Detach fork + rename project + Apache 2.0 attribution. **DONE 2026-05-04** — repo is now `podarok/gcalpod`. | [`W3-detach-rename/`](W3-detach-rename/) |
+| W4-readme-refresh | Status-driven README rewrite reflecting actual code on main. | [`W4-readme-refresh/`](W4-readme-refresh/) |
 
 ## Conventions
 
 - Plan format: `Goal / Files / Steps / Tests / Validation / Out of scope`.
-- One task = one commit. PRs land on `main` of `podarok/google-calendar-cli`
-  fork. Upstream PRs to `rust-dd/google-calendar-cli` only after owner ok.
+- **No PRs.** Commits land directly on `main` of `podarok/gcalpod`
+  after owner ok. One commit per feature.
 - Mark task done by appending `## Result` section to its `README.md`
   and committing it together with the code.
 - Pre-flight: `cargo fmt --all -- --check`, `cargo clippy --all-targets
@@ -41,13 +42,16 @@ containing the plan. Each wave gates the next.
 ## House rules
 
 - Latest stable Rust, no MSRV pin.
-- Binary name `gcal`. Crate name `gcal`. Repos:
-  - upstream: `rust-dd/google-calendar-cli`
-  - fork: `podarok/google-calendar-cli` (active development)
+- Binary name `gcal`. Crate / repo name `gcalpod`.
+- Repository: `podarok/gcalpod` (standalone — detached from
+  `rust-dd/google-calendar-cli` 2026-05-04, see [`../NOTICE.md`](../NOTICE.md)).
 - No AI-credit trailers (NDA).
 - Owner gates each meaningful action — see [`RULES.md`](RULES.md).
-- Backwards compatibility: legacy `~/.gcal/secret.json` and
-  `~/.gcal/store.json` continue to work as `default` profile.
+- **No hardcoded secrets** in source. Every user configures their
+  own Google Cloud OAuth client (env vars, `GCAL_SECRET_FILE`, or
+  `~/.gcal/secret.json`). No shared/built-in fallback.
+- **No PRs.** Commit per feature on `main`. Force-push only with
+  explicit owner gate (used once for secret-history purge 2026-05-04).
 
 ## Pinned references
 

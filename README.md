@@ -1,24 +1,41 @@
 # gcalpod — Google Calendar CLI
 
 ![rust](https://github.com/podarok/gcalpod/actions/workflows/rust.yml/badge.svg)
+[![Sponsor](https://img.shields.io/badge/Sponsor-podarok-ff69b4)](https://github.com/sponsors/podarok)
 
 `gcalpod` is a Rust command-line interface for Google Calendar. The
 binary is invoked as `gcal`; the package + repository name is
 `gcalpod`. Add events, list events, manage multiple profiles — all
 without leaving your terminal.
 
-> Derivative of [`rust-dd/google-calendar-cli`](https://github.com/rust-dd/google-calendar-cli).
-> Apache 2.0 license preserved. Substantial modifications listed in
-> [`NOTICE.md`](NOTICE.md). Active work plan in [`queue/`](queue/).
-
-*Note: Early-stage project. Many features still in development. See
-[`queue/INDEX.md`](queue/INDEX.md) for the current roadmap.*
+> Derivative of [`rust-dd/google-calendar-cli`](https://github.com/rust-dd/google-calendar-cli)
+> (Apache 2.0). Detached fork with substantial modifications. See
+> [`NOTICE.md`](NOTICE.md).
 
 ![Screenshot](docs/screenshot.png)
 
-Happy scheduling!
-
 ***
+
+## Status (2026-05-04)
+
+**Shipped on `main`:**
+- Custom Google Cloud OAuth client (env vars / file / `~/.gcal/secret.json`).
+- `GCAL_VERBOSE=1` source logging.
+- `add`, `list` (current week), top-level quick-add.
+- Conference (Google Meet) support on event create.
+- Apache 2.0 attribution + Sponsor button.
+
+**On the queue (not yet implemented):**
+- Multi-profile auth (`gcal auth login/status/logout/switch`).
+- `gcal list --from --to --format json|tsv|csv|raw|table`.
+- `gcal calendars list`.
+- `gcal init` interactive setup wizard.
+- `gcal config get/set`, `agenda`, `search`, `edit`, `delete`,
+  `import`, `remind`.
+- Man page generation.
+
+Roadmap detail: [`queue/INDEX.md`](queue/INDEX.md). Working method:
+no PRs, commit per feature on `main`.
 
 ## Installation
 
@@ -28,70 +45,77 @@ cd gcalpod
 cargo build --release && cargo install --path . --locked
 ```
 
-After install, the binary is `gcal` (in `~/.cargo/bin/gcal`).
+After install, the binary is `gcal` at `~/.cargo/bin/gcal`.
+
+## First-time auth setup
+
+`gcal` requires your own Google Cloud OAuth client. There is **no
+shared / built-in fallback** — every user creates their own OAuth
+project (~5 minutes, free for personal use).
+
+Step-by-step Google Cloud Console setup: [`docs/custom_auth.md`](docs/custom_auth.md).
 
 ## Usage
 
-
-### Help Command
-
-To view available commands and options, use:
-
-
 ```sh
-gcal help
+gcal help                                        # show subcommand tree
+gcal "Retro & Demo at 16:00"                     # quick-add (today)
+gcal "Appointment on June 3rd 10am-10:25am"      # quick-add (natural date)
+gcal "Appointment" "10:25"                       # quick-add with time
+gcal add "Sprint planning" "2026-05-06 10:00"    # explicit add
+gcal "Appointment" "23:45" --conference          # add with Google Meet
+gcal list                                        # current week table
 ```
 
-### Example Commands
+`--from / --to / --format` flags for `list` are on the queue
+([W0-P5](queue/W0-mvp-auth-list/P5-list-range/), [W0-P6](queue/W0-mvp-auth-list/P6-list-json/)).
 
-Here are some example commands to help you get started:
+## Configuration
 
-
-| Description                          | Command                                          |
-|--------------------------------------|--------------------------------------------------|
-| Quick event for today                | `gcal "Retro & Demo at 16:00"`                   |
-| Quick event on a specific date       | `gcal "Appointment on June 3rd 10am-10:25am"`    |
-| Add event specifying only the time   | `gcal "Appointment" "10:25"`                     |
-| Add event with month and day         | `gcal "Appointment" "07-13 23:25"`               |
-| Add event with full date and time    | `gcal add "Appointment" "2024-07-12 10:25"`      |
-| Add event with conference meeting    | `gcal "Appointment" "23:45" --conference`        |
-| List events                          | `gcal list`                                      |
-
-
-## Authentication
-
-`gcal` requires you to configure your own Google Cloud OAuth client.
-There is no shared / built-in fallback — every user creates their
-own OAuth project (it takes ~5 minutes and is free for personal use).
-
-### Configuring your OAuth project
-
-`gcal` resolves credentials in this order:
+`gcal` resolves OAuth credentials in this order:
 
 1. `GCAL_CLIENT_ID` + `GCAL_CLIENT_SECRET` env vars (optional `GCAL_PROJECT_ID`).
-2. `GCAL_SECRET_FILE` env var pointing to a JSON file.
+2. `GCAL_SECRET_FILE=<path>` env var.
 3. `~/.gcal/secret.json` (default file path).
 
 If none are configured, `gcal` errors with a setup pointer.
 
-Set `GCAL_VERBOSE=1` to print which source was used.
+```sh
+GCAL_VERBOSE=1 gcal list
+# gcal: OAuth secret from /Users/you/.gcal/secret.json
+```
 
-Step-by-step Google Cloud Console setup is in [docs/custom_auth.md](docs/custom_auth.md).
-
-### Authentication Process
-
-1. Run any gcal command; the authentication process will start automatically.
-2. Follow the on-screen instructions to complete the authentication.
-3. The authentication token will be saved to ~/.gcal/store.json for future use.
-
+The OAuth token is cached at `~/.gcal/store.json` after the first
+successful login. Delete that file to re-authenticate.
 
 ## Development
 
-For developers looking to contribute or experiment with gcal, you can run the project directly from the source:
-
-
 ```sh
-cargo run -- list
+cargo run -- list                            # run from source
+cargo fmt --all -- --check                   # pre-flight
+cargo clippy --all-targets -- -D warnings    # pre-flight
+cargo test --all                             # pre-flight
 ```
 
-This command will compile and run the gcal tool, allowing you to list events or perform other tasks directly from your development environment.
+Working method: commits land directly on `main`. No PRs. See
+[`queue/RULES.md`](queue/RULES.md).
+
+## Sponsorship
+
+Sponsor button on the repo page activates these channels (configured
+in [`.github/FUNDING.yml`](.github/FUNDING.yml)):
+
+- [GitHub Sponsors](https://github.com/sponsors/podarok)
+- [Patreon](https://www.patreon.com/podarok_ua)
+- [Buy Me a Coffee](https://www.buymeacoffee.com/podarok)
+- [PayPal](https://www.paypal.com/ncp/payment/HW9T9M6U8ZGVU)
+
+## Acknowledgements
+
+Built on top of `rust-dd/google-calendar-cli`. Substantial
+modifications and full attribution: [`NOTICE.md`](NOTICE.md).
+
+## License
+
+[Apache License 2.0](LICENSE) (preserved from upstream). Modifications
+released under the same license.
