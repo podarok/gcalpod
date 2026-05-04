@@ -89,4 +89,34 @@ gcal auth status --check       # live ping
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Surface delivered: `gcal auth status [--all] [--check] [--show-token]`.
+JSON output deferred to W0-P6 (`--format` is a list-command flag, not
+a global flag yet).
+
+Files:
+- `src/commands/auth/status.rs` (new) — `StatusArgs`, `run()`,
+  `list_all_profiles()`, `report_profile()`. Reads `store.json`
+  via `serde_json` for offline access/refresh-token presence check.
+- `src/commands/auth/mod.rs` — export `status`.
+- `src/main.rs` — register `status` clap subcommand + dispatch.
+- `Cargo.toml` — add `serde_json`.
+
+Output:
+```
+Profile: default (active)
+  Secret:  /Users/.../.gcal/profiles/default/secret.json
+  Scopes:  https://...auth/calendar, https://...auth/calendar.events, ...
+  Token:   access=yes refresh=yes (path: /Users/.../.gcal/profiles/default/store.json)
+  State:   ✓ ready (offline check)
+```
+
+`--all` enumerates `~/.gcal/profiles/` (sorted). Marks active profile
+with ` (active)`. `--check` builds authenticator and pings
+`hub.calendar_list().list().max_results(1)`. `--show-token` prints
+bearer with stderr warning.
+
+Smoke note: first `auth status` run triggered legacy migration
+(`~/.gcal/{secret,store}.json` → `~/.gcal/profiles/default/`),
+confirming W0-P1 migration path.

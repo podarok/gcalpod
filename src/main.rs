@@ -85,6 +85,31 @@ async fn main() {
                                 .action(ArgAction::SetTrue)
                                 .required(false),
                         ),
+                )
+                .subcommand(
+                    Command::new("status")
+                        .about("Show authentication state for the active profile (or all)")
+                        .arg(
+                            Arg::new("all")
+                                .help("Show every profile under ~/.gcal/profiles/")
+                                .long("all")
+                                .action(ArgAction::SetTrue)
+                                .required(false),
+                        )
+                        .arg(
+                            Arg::new("check")
+                                .help("Make a live API call to verify the token works")
+                                .long("check")
+                                .action(ArgAction::SetTrue)
+                                .required(false),
+                        )
+                        .arg(
+                            Arg::new("show-token")
+                                .help("Print the bearer access token (treat as a credential)")
+                                .long("show-token")
+                                .action(ArgAction::SetTrue)
+                                .required(false),
+                        ),
                 ),
         )
         .get_matches();
@@ -121,6 +146,18 @@ async fn main() {
                 };
                 if let Err(e) = commands::auth::login::run(&prof, args).await {
                     eprintln!("Error during login - {}", e);
+                    std::process::exit(1);
+                }
+                return;
+            }
+            Some(("status", status_m)) => {
+                let args = commands::auth::status::StatusArgs {
+                    all: status_m.get_flag("all"),
+                    check: status_m.get_flag("check"),
+                    show_token: status_m.get_flag("show-token"),
+                };
+                if let Err(e) = commands::auth::status::run(&prof, args).await {
+                    eprintln!("Error during status - {}", e);
                     std::process::exit(1);
                 }
                 return;
