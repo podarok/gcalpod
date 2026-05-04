@@ -56,7 +56,28 @@ async fn main() {
                 )
                 .arg(Arg::new("date").help("Sets the event date").required(true)),
         )
-        .subcommand(Command::new("list").about("Lists all events in Google Calendar"))
+        .subcommand(
+            Command::new("list")
+                .about("Lists events in a date range (default: current week)")
+                .arg(
+                    Arg::new("from")
+                        .help("Range start: today, +Nd, +Nw, weekday, YYYY-MM-DD, RFC3339")
+                        .long("from")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("to")
+                        .help("Range end: today, +Nd, +Nw, weekday, YYYY-MM-DD, RFC3339")
+                        .long("to")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("calendar")
+                        .help("Calendar id (default: primary)")
+                        .long("calendar")
+                        .required(false),
+                ),
+        )
         .subcommand(
             Command::new("auth")
                 .about("Manage OAuth credentials per profile")
@@ -226,18 +247,94 @@ async fn main() {
     let tz: Tz = get_default_timezone(&hub).await.unwrap();
 
     match matches.subcommand() {
-        Some(("list", _)) => {
+        Some(("list", list_m)) => {
+            // Resolve --from / --to (defaults: current week, +7d).
             let start_of_the_week = get_start_of_the_week();
-            let start_of_the_week_utc = start_of_the_week.with_hour(0).unwrap().to_utc();
+            let default_from_utc = start_of_the_week.with_hour(0).unwrap().to_utc();
+            let default_to_utc = default_from_utc + Duration::days(7);
+
+            let time_min = match list_m.get_one::<String>("from") {
+                Some(s) => match util::date::parse_range_input(tz, s) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        eprintln!("Error parsing --from: {}", e);
+                        return;
+                    }
+                },
+                None => default_from_utc,
+            };
+            let time_max = match list_m.get_one::<String>("to") {
+                Some(s) => match util::date::parse_range_input(tz, s) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        eprintln!("Error parsing --to: {}", e);
+                        return;
+                    }
+                },
+                None => default_to_utc,
+            };
+
+            if time_max <= time_min {
+                eprintln!("Error: --to must be after --from.");
+                return;
+            }
+
+            let calendar_id: &str = list_m
+                .get_one::<String>("calendar")
+                .map(String::as_str)
+                .unwrap_or("primary");
+
+            let range_days = (time_max - time_min).num_days();
+            let use_flat_list = range_days > 14;
+            let _ = default_to_utc;
 
             let events = hub
                 .events()
-                .list("primary")
-                .time_min(start_of_the_week_utc)
-                .time_max(start_of_the_week_utc + Duration::days(7))
+                .list(calendar_id)
+                .time_min(time_min)
+                .time_max(time_max)
                 .single_events(true)
                 .doit()
                 .await;
+            if use_flat_list {
+                match events {
+                    Ok((_, evs)) => {
+                        if let Some(items) = evs.items {
+                            let mut sorted: Vec<_> = items.into_iter().filter(|e| {
+                                e.start.as_ref().and_then(|s| s.date_time).is_some()
+                            }).collect();
+                            sorted.sort_by_key(|e| e.start.as_ref().unwrap().date_time.unwrap());
+                            for ev in &sorted {
+                                let s = ev.start.as_ref().unwrap().date_time.unwrap();
+                                let e = ev
+                                    .end
+                                    .as_ref()
+                                    .and_then(|x| x.date_time)
+                                    .unwrap_or(s);
+                                let s_local = tz.from_utc_datetime(&s.naive_utc());
+                                let e_local = tz.from_utc_datetime(&e.naive_utc());
+                                let summary = ev.summary.as_deref().unwrap_or("(no title)");
+                                println!(
+                                    "{}  {:02}:{:02}-{:02}:{:02}  {}",
+                                    s_local.format("%Y-%m-%d"),
+                                    s_local.hour(),
+                                    s_local.minute(),
+                                    e_local.hour(),
+                                    e_local.minute(),
+                                    summary
+                                );
+                            }
+                            if sorted.is_empty() {
+                                println!("(no events in range)");
+                            }
+                        } else {
+                            println!("(no events in range)");
+                        }
+                    }
+                    Err(e) => println!("Error retrieving events: {:?}", e),
+                }
+                return;
+            }
             match events {
                 Ok((_, events)) => {
                     let mut table: Table = Table::new();

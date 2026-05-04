@@ -12,7 +12,7 @@ within each section. Mark status next to each.
 | `auth login` | done | [`W0-mvp-auth-list/P2-auth-login/README.md`](W0-mvp-auth-list/P2-auth-login/README.md) |
 | `auth status` | done | [`W0-mvp-auth-list/P3-auth-status/README.md`](W0-mvp-auth-list/P3-auth-status/README.md) |
 | `auth logout` + `switch` | done | [`W0-mvp-auth-list/P4-auth-logout-switch/README.md`](W0-mvp-auth-list/P4-auth-logout-switch/README.md) |
-| `list --from --to` | pending | [`W0-mvp-auth-list/P5-list-range/README.md`](W0-mvp-auth-list/P5-list-range/README.md) |
+| `list --from --to` | done | [`W0-mvp-auth-list/P5-list-range/README.md`](W0-mvp-auth-list/P5-list-range/README.md) |
 | `list --format json/tsv/csv/raw` | pending | [`W0-mvp-auth-list/P6-list-json/README.md`](W0-mvp-auth-list/P6-list-json/README.md) |
 | `calendars list` | pending | [`W0-mvp-auth-list/P7-calendars-list/README.md`](W0-mvp-auth-list/P7-calendars-list/README.md) |
 

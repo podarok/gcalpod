@@ -87,6 +87,87 @@ pub fn days_in_english() -> [&'static str; 7] {
 /// let utc_month_day_time = get_date_from_string(tz, &month_day_time_str);
 /// println!("{}", utc_month_day_time); // Outputs the current year with the provided month, day, and time in UTC
 /// ```
+/// Parse a list-range input string into a `DateTime<Utc>` at start-of-day in `tz`.
+///
+/// Accepts:
+/// - `today`, `tomorrow`, `yesterday`
+/// - `+Nd` / `+Nw` / `-Nd` / `-Nw` (relative offsets, days/weeks)
+/// - `YYYY-MM-DD` (calendar date, midnight in `tz`)
+/// - RFC3339 (`2026-05-04T12:00:00Z` or `+03:00`)
+/// - weekday name (`monday`, `tue`, …) — next occurrence on or after today
+pub fn parse_range_input(tz: Tz, input: &str) -> Result<DateTime<Utc>, String> {
+    let s = input.trim().to_lowercase();
+    let now_local = Local::now().with_timezone(&tz);
+
+    if s == "today" {
+        return Ok(start_of_day_utc(tz, now_local));
+    }
+    if s == "tomorrow" {
+        return Ok(start_of_day_utc(tz, now_local + Duration::days(1)));
+    }
+    if s == "yesterday" {
+        return Ok(start_of_day_utc(tz, now_local - Duration::days(1)));
+    }
+
+    // Relative ±Nd / ±Nw
+    if let Some(rest) = s.strip_prefix('+').or_else(|| s.strip_prefix('-')) {
+        let sign: i64 = if s.starts_with('-') { -1 } else { 1 };
+        if let Some(n_str) = rest.strip_suffix('d') {
+            let n: i64 = n_str.parse().map_err(|e| format!("bad days '{}': {}", n_str, e))?;
+            return Ok(start_of_day_utc(tz, now_local + Duration::days(sign * n)));
+        }
+        if let Some(n_str) = rest.strip_suffix('w') {
+            let n: i64 = n_str.parse().map_err(|e| format!("bad weeks '{}': {}", n_str, e))?;
+            return Ok(start_of_day_utc(tz, now_local + Duration::weeks(sign * n)));
+        }
+    }
+
+    // Weekday name (next occurrence on or after today)
+    let weekday_idx = match s.as_str() {
+        "mon" | "monday" => Some(0u32),
+        "tue" | "tuesday" => Some(1),
+        "wed" | "wednesday" => Some(2),
+        "thu" | "thursday" => Some(3),
+        "fri" | "friday" => Some(4),
+        "sat" | "saturday" => Some(5),
+        "sun" | "sunday" => Some(6),
+        _ => None,
+    };
+    if let Some(target_idx) = weekday_idx {
+        let today_idx = now_local.weekday().num_days_from_monday();
+        let delta = (target_idx + 7 - today_idx) % 7;
+        return Ok(start_of_day_utc(tz, now_local + Duration::days(delta as i64)));
+    }
+
+    // RFC3339
+    if let Ok(dt) = DateTime::parse_from_rfc3339(input) {
+        return Ok(dt.with_timezone(&Utc));
+    }
+
+    // YYYY-MM-DD
+    if let Ok(d) = chrono::NaiveDate::parse_from_str(input, "%Y-%m-%d") {
+        let nd = d.and_hms_opt(0, 0, 0).ok_or_else(|| "bad time".to_string())?;
+        let local = tz
+            .from_local_datetime(&nd)
+            .single()
+            .ok_or_else(|| format!("ambiguous local datetime for {}", input))?;
+        return Ok(local.with_timezone(&Utc));
+    }
+
+    Err(format!(
+        "unrecognized date input '{}'. Try: today, tomorrow, +7d, +2w, monday, 2026-05-04, or RFC3339.",
+        input
+    ))
+}
+
+fn start_of_day_utc<TZ: TimeZone>(tz: Tz, dt: DateTime<TZ>) -> DateTime<Utc> {
+    let naive = dt.naive_local().date().and_hms_opt(0, 0, 0).unwrap();
+    tz.from_local_datetime(&naive)
+        .single()
+        .unwrap_or_else(|| tz.from_local_datetime(&naive).earliest().unwrap())
+        .with_timezone(&Utc)
+}
+
 pub fn get_date_from_string(tz: Tz, date: &String) -> DateTime<Utc> {
     if let Ok(parsed_time) = NaiveTime::parse_from_str(date, "%H:%M") {
         let current_date = Utc::now().date_naive();

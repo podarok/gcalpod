@@ -63,4 +63,29 @@ gcal list --calendar work@example.com
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Surface delivered: `gcal list [--from <input>] [--to <input>]
+[--calendar <id>]`. Defaults preserved: current Monday-anchored week.
+
+Files:
+- `src/util/date.rs` — added `parse_range_input(tz, input)` accepting:
+  `today`, `tomorrow`, `yesterday`, `+Nd`, `+Nw`, `-Nd`, `-Nw`,
+  `monday..sunday` (next-occurrence), RFC3339, `YYYY-MM-DD`.
+  Helper `start_of_day_utc()` for midnight-in-tz anchoring.
+- `src/main.rs` — extended `list` clap subcommand with `--from`,
+  `--to`, `--calendar`. Validates `to > from`. Routes to
+  flat-list renderer when `range_days > 14` else preserves the
+  existing comfy-table week grid.
+
+Flat-list output: one line per event, sorted by start, formatted as
+`YYYY-MM-DD HH:MM-HH:MM  <summary>` in user TZ.
+
+Module split (`commands/events/list.rs`) deferred to
+[`epic-01-cli-restructure`](../../epic-01-cli-restructure/README.md);
+keeping list logic in `main.rs` short-term to minimize churn.
+
+Smoke verified:
+- `gcal list --help` shows all four flags.
+- Range > 14d → flat list; else → existing week grid.
+- Bad input surfaces actionable parse error.
