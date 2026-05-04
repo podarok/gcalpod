@@ -200,6 +200,10 @@ fn build_cli() -> Command {
                                 .help("Profile name to activate")
                                 .required(true),
                         ),
+                )
+                .subcommand(
+                    Command::new("refresh")
+                        .about("Force a token refresh for the active profile (or --profile <name>)"),
                 ),
         )
         .subcommand(
@@ -503,6 +507,13 @@ async fn main() {
                 let target = switch_m.get_one::<String>("target").unwrap();
                 if let Err(e) = commands::auth::switch::run(target).await {
                     util::recovery::report_error("auth switch", &e);
+                    std::process::exit(1);
+                }
+                return;
+            }
+            Some(("refresh", _)) => {
+                if let Err(e) = commands::auth::refresh::run(&prof).await {
+                    util::recovery::report_error("auth refresh", &e);
                     std::process::exit(1);
                 }
                 return;
