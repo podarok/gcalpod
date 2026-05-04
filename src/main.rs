@@ -370,7 +370,7 @@ async fn main() {
     // Subcommands that don't need a pre-built CalendarHub run before auth().
     if let Some(("init", _)) = matches.subcommand() {
         if let Err(e) = commands::init::run(&prof).await {
-            eprintln!("Error during init - {}", e);
+            util::recovery::report_error("init", &e);
             std::process::exit(1);
         }
         return;
@@ -396,7 +396,7 @@ async fn main() {
             }
         };
         if let Err(e) = commands::config_cmd::run(action).await {
-            eprintln!("Error in config: {}", e);
+            util::recovery::report_error("config", &e);
             std::process::exit(1);
         }
         return;
@@ -411,7 +411,7 @@ async fn main() {
                     reauth: login_m.get_flag("reauth"),
                 };
                 if let Err(e) = commands::auth::login::run(&prof, args).await {
-                    eprintln!("Error during login - {}", e);
+                    util::recovery::report_error("auth login", &e);
                     std::process::exit(1);
                 }
                 return;
@@ -423,7 +423,7 @@ async fn main() {
                     show_token: status_m.get_flag("show-token"),
                 };
                 if let Err(e) = commands::auth::status::run(&prof, args).await {
-                    eprintln!("Error during status - {}", e);
+                    util::recovery::report_error("auth status", &e);
                     std::process::exit(1);
                 }
                 return;
@@ -434,7 +434,7 @@ async fn main() {
                     purge: logout_m.get_flag("purge"),
                 };
                 if let Err(e) = commands::auth::logout::run(&prof, args).await {
-                    eprintln!("Error during logout - {}", e);
+                    util::recovery::report_error("auth logout", &e);
                     std::process::exit(1);
                 }
                 return;
@@ -442,7 +442,7 @@ async fn main() {
             Some(("switch", switch_m)) => {
                 let target = switch_m.get_one::<String>("target").unwrap();
                 if let Err(e) = commands::auth::switch::run(target).await {
-                    eprintln!("Error during switch - {}", e);
+                    util::recovery::report_error("auth switch", &e);
                     std::process::exit(1);
                 }
                 return;
@@ -457,8 +457,8 @@ async fn main() {
     let hub = match calendar::auth(&prof).await {
         Ok(hub) => hub,
         Err(e) => {
-            eprintln!("Error during authentication - {}", e);
-            return;
+            util::recovery::report_error("authentication", &e);
+            std::process::exit(1);
         }
     };
 
@@ -486,7 +486,7 @@ async fn main() {
         )
         .await
         {
-            eprintln!("Error during remind: {}", e);
+            util::recovery::report_error("remind", &e);
             std::process::exit(1);
         }
         return;
@@ -554,7 +554,7 @@ async fn main() {
         )
         .await
         {
-            eprintln!("Error during import: {}", e);
+            util::recovery::report_error("import", &e);
             std::process::exit(1);
         }
         return;
@@ -584,7 +584,7 @@ async fn main() {
         )
         .await
         {
-            eprintln!("Error editing event: {}", e);
+            util::recovery::report_error("edit", &e);
             std::process::exit(1);
         }
         return;
@@ -607,7 +607,7 @@ async fn main() {
         )
         .await
         {
-            eprintln!("Error deleting event: {}", e);
+            util::recovery::report_error("delete", &e);
             std::process::exit(1);
         }
         return;

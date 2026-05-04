@@ -64,4 +64,13 @@ compact via `-u`. Best balance of compatibility + token savings.
 
 ## Result
 
-_Filled when owner picks an option._
+Owner picked **Option C** (hybrid: failure-first + trimmed
+`--help` by default; `-u` for compact body) on 2026-05-04 ("вйо" =
+go with recommended).
+
+Hand-off to W5-P2 implementation. P2 will be split into incremental
+steps:
+- step-1: failure-first + recovery tee (lands first; small risk).
+- step-2: `--help` text trim across subcommands.
+- step-3: `-u/--ultra-compact` global flag + per-command compact
+  renderers.

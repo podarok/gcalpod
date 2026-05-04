@@ -50,6 +50,32 @@ gcal list bogus-flag    # error printed compact + tee path
 - Wrapping `gcal` invocation inside `rtk` proxy.
 - Conky / Tera template formatters (W2-P1).
 
-## Result
+## Result (in flight)
 
-_Filled when implementation lands on `main`._
+**Step 1 done (2026-05-04):** failure-first + recovery tee.
+
+Files:
+- `src/util/recovery.rs` (new) — `report_error(command, error)`
+  writes full error body to `~/Library/Application Support/gcal/tee/<unix>_<cmd>.log`
+  (XDG `data_local_dir`/gcal/tee on Linux; `/tmp/gcal-tee` fallback)
+  and prints `gcal: <cmd> failed: <first-line-truncated-120>; see <path>`.
+  3 unit tests for `truncate_first_line` cover short-pass, long-clip,
+  multi-line-first-line semantics.
+- `src/util/mod.rs` — register `recovery`.
+- `src/main.rs` — replace 9 operational error sites with
+  `util::recovery::report_error("<cmd>", &e)`: init, config, auth
+  login/status/logout/switch, authentication build, remind, import,
+  edit, delete. Argument-parse errors (e.g. bad `--from`) still use
+  direct `eprintln!` because they're already concise + recoverable
+  by the user.
+
+Smoke verified:
+```
+$ gcal auth switch nonexistent
+gcal: auth switch failed: Profile 'nonexistent' does not exist. ... ; see /Users/.../gcal/tee/1777882749_auth_switch.log
+```
+Log file present + holds full error body.
+
+**Step 2 pending:** `--help` text trim across all subcommands.
+**Step 3 pending:** `-u/--ultra-compact` global flag + per-command
+compact renderers.

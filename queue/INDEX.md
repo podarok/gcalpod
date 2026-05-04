@@ -57,8 +57,8 @@ within each section. Mark status next to each.
 | Phase | Status | Path |
 |---|---|---|
 | Research | done | [`W5-rtk-output/P0-research/README.md`](W5-rtk-output/P0-research/README.md) |
-| Options proposal (owner gate) | pending | [`W5-rtk-output/P1-options-proposal/README.md`](W5-rtk-output/P1-options-proposal/README.md) |
-| Implement | blocked by P1 | [`W5-rtk-output/P2-implement/README.md`](W5-rtk-output/P2-implement/README.md) |
+| Options proposal (owner gate) | done — Option C picked | [`W5-rtk-output/P1-options-proposal/README.md`](W5-rtk-output/P1-options-proposal/README.md) |
+| Implement | step-1 done; step-2/3 pending | [`W5-rtk-output/P2-implement/README.md`](W5-rtk-output/P2-implement/README.md) |
 
 ## Cross-cutting epics
 
