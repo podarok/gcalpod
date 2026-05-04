@@ -205,6 +205,24 @@ async fn main() {
                 .subcommand(Command::new("path").about("Print absolute path of config.toml")),
         )
         .subcommand(
+            Command::new("import")
+                .about("Bulk-insert events from an ICS / VCAL file")
+                .arg(Arg::new("path").required(true))
+                .arg(Arg::new("calendar").long("calendar").required(false))
+                .arg(
+                    Arg::new("dry-run")
+                        .long("dry-run")
+                        .action(ArgAction::SetTrue)
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("skip-duplicates")
+                        .long("skip-duplicates")
+                        .action(ArgAction::SetTrue)
+                        .required(false),
+                ),
+        )
+        .subcommand(
             Command::new("edit")
                 .about("Edit an existing event by id (use --field key=value)")
                 .arg(Arg::new("event-id").required(true))
@@ -418,6 +436,32 @@ async fn main() {
     };
 
     let tz: Tz = get_default_timezone(&hub).await.unwrap();
+
+    if let Some(("import", m)) = matches.subcommand() {
+        let path = m.get_one::<String>("path").unwrap();
+        let calendar_id: &str = m
+            .get_one::<String>("calendar")
+            .map(String::as_str)
+            .unwrap_or("primary");
+        let dry_run = m.get_flag("dry-run");
+        let skip_duplicates = m.get_flag("skip-duplicates");
+        if let Err(e) = commands::import::run(
+            &hub,
+            commands::import::ImportArgs {
+                path,
+                calendar_id,
+                dry_run,
+                skip_duplicates,
+                tz,
+            },
+        )
+        .await
+        {
+            eprintln!("Error during import: {}", e);
+            std::process::exit(1);
+        }
+        return;
+    }
 
     if let Some(("edit", m)) = matches.subcommand() {
         let event_id = m.get_one::<String>("event-id").unwrap();
