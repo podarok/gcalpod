@@ -58,4 +58,36 @@ gcal list --from today --to +30d  # > 7 days -> agenda auto
 
 ## Result
 
-_Filled when implementation lands on `main`._
+Implemented 2026-05-04 on `main`.
+
+Files:
+- `src/util/render.rs` (new) — `LayoutStyle { Auto, Grid, Agenda }`,
+  `LineArt { Unicode, Fancy, Ascii }`, `render_list_smart()`
+  dispatcher; `render_week_grid()` and `render_agenda_grouped()`
+  renderers. Uses `terminal_size::terminal_size()` for adaptive
+  width and `unicode_width::UnicodeWidthStr` for non-ASCII column
+  alignment. `truncate_to_width` clips with `…`.
+- `src/util/mod.rs` — register `render`.
+- `src/main.rs` — list arm replaces flat-list + week-grid blocks
+  with single dispatch. Adds `--style` + `--lineart` clap flags.
+  Removes unused `HashMap`/`Entry`/`Cell`/`Color`/`Table`/`Month`
+  imports.
+- `Cargo.toml` — add `terminal_size` 0.4 + `unicode-width` 0.2.
+
+Auto mode rule: range_days ≤ 7 AND cols ≥ 100 → grid; else agenda.
+
+Today highlighted yellow + bold in grid header; agenda day header
+gets `← today` marker.
+
+All-day events: own row at top of grid; `[ALL DAY]` prefix in
+agenda. Empty cells show `·`. Empty agenda days show `(none)`.
+
+Tests: 6 new in `util::render` (`LayoutStyle::parse`,
+`LineArt::parse`, 4× truncate_to_width edge cases). All 46 tests
+pass.
+
+Smoke: `gcal list` renders cleanly on real Calendar API data.
+
+Open follow-up: cell width allocation could give more space to
+days with content (currently uniform `(cols-20)/7`). Defer to
+1.x feature release if needed.

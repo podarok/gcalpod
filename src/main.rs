@@ -3,17 +3,13 @@ mod config;
 mod profile;
 mod util;
 
-use std::collections::HashMap;
-use std::{collections::hash_map::Entry, fmt::Write};
-
-use chrono::{Datelike, Duration, Month, TimeZone, Timelike};
+use chrono::{Duration, Timelike};
 use chrono_tz::Tz;
 use clap::{Arg, ArgAction, Command};
-use comfy_table::{Attribute, Cell, Color, ContentArrangement, Table};
 use google_calendar3::api::{ConferenceData, ConferenceSolutionKey, CreateConferenceRequest};
 use google_calendar3::api::{Event, EventDateTime};
 use util::calendar::{self, get_default_timezone};
-use util::date::{days_in_english, get_date_from_string, get_start_of_the_week};
+use util::date::{get_date_from_string, get_start_of_the_week};
 use uuid::Uuid;
 
 #[tokio::main]
@@ -92,6 +88,22 @@ async fn main() {
                         .action(ArgAction::SetTrue)
                         .required(false)
                         .conflicts_with("format"),
+                )
+                .arg(
+                    Arg::new("style")
+                        .help("Table layout: auto | grid | agenda")
+                        .long("style")
+                        .value_parser(["auto", "grid", "agenda"])
+                        .default_value("auto")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("lineart")
+                        .help("Box drawing: unicode | fancy | ascii")
+                        .long("lineart")
+                        .value_parser(["unicode", "fancy", "ascii"])
+                        .default_value("unicode")
+                        .required(false),
                 ),
         )
         .subcommand(
@@ -759,9 +771,32 @@ async fn main() {
                 .map(String::as_str)
                 .unwrap_or("primary");
 
-            let range_days = (time_max - time_min).num_days();
-            let use_flat_list = range_days > 14;
+            let _range_days = (time_max - time_min).num_days();
             let _ = default_to_utc;
+
+            // --style + --lineart for table output (W7-P2).
+            let style_str = list_m
+                .get_one::<String>("style")
+                .map(String::as_str)
+                .unwrap_or("auto");
+            let lineart_str = list_m
+                .get_one::<String>("lineart")
+                .map(String::as_str)
+                .unwrap_or("unicode");
+            let layout_style = match util::render::LayoutStyle::parse(style_str) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    return;
+                }
+            };
+            let lineart = match util::render::LineArt::parse(lineart_str) {
+                Ok(l) => l,
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    return;
+                }
+            };
 
             // Resolve --format (or --json alias).
             let format_str = if list_m.get_flag("json") {
@@ -810,139 +845,19 @@ async fn main() {
                 return;
             }
 
-            if use_flat_list {
-                match events {
-                    Ok((_, evs)) => {
-                        if let Some(items) = evs.items {
-                            let mut sorted: Vec<_> = items
-                                .into_iter()
-                                .filter(|e| e.start.as_ref().and_then(|s| s.date_time).is_some())
-                                .collect();
-                            sorted.sort_by_key(|e| e.start.as_ref().unwrap().date_time.unwrap());
-                            for ev in &sorted {
-                                let s = ev.start.as_ref().unwrap().date_time.unwrap();
-                                let e = ev.end.as_ref().and_then(|x| x.date_time).unwrap_or(s);
-                                let s_local = tz.from_utc_datetime(&s.naive_utc());
-                                let e_local = tz.from_utc_datetime(&e.naive_utc());
-                                let summary = ev.summary.as_deref().unwrap_or("(no title)");
-                                println!(
-                                    "{}  {:02}:{:02}-{:02}:{:02}  {}",
-                                    s_local.format("%Y-%m-%d"),
-                                    s_local.hour(),
-                                    s_local.minute(),
-                                    e_local.hour(),
-                                    e_local.minute(),
-                                    summary
-                                );
-                            }
-                            if sorted.is_empty() {
-                                println!("(no events in range)");
-                            }
-                        } else {
-                            println!("(no events in range)");
-                        }
-                    }
-                    Err(e) => println!("Error retrieving events: {:?}", e),
-                }
-                return;
-            }
+            // Hybrid renderer: grid for short range on wide tty, agenda otherwise.
             match events {
-                Ok((_, events)) => {
-                    let mut table: Table = Table::new();
-                    let mut event_dates: HashMap<_, Vec<_>> = HashMap::new();
-
-                    if let Some(items) = events.items {
-                        for event in items {
-                            if event.start.as_ref().is_none()
-                                || event.start.as_ref().unwrap().date_time.is_none()
-                            {
-                                continue;
-                            }
-                            let event_start = event
-                                .start
-                                .as_ref()
-                                .unwrap()
-                                .date_time
-                                .unwrap()
-                                .date_naive();
-                            match event_dates.entry(event_start) {
-                                Entry::Vacant(e) => {
-                                    e.insert(vec![event]);
-                                }
-                                Entry::Occupied(mut e) => {
-                                    e.get_mut().push(event);
-                                }
-                            }
-                        }
-                    }
-
-                    let mut row_before_12: Vec<String> = vec![];
-                    let mut row_after_12: Vec<String> = vec![];
-                    let mut header: Vec<Cell> = vec![];
-                    for (i, v) in days_in_english().iter().enumerate() {
-                        let i = i as i64;
-                        let next_date = start_of_the_week + Duration::days(i);
-                        let header_value = format!(
-                            "{} - {} {:?}",
-                            v,
-                            next_date.day(),
-                            Month::try_from(u8::try_from(next_date.month()).unwrap())
-                                .ok()
-                                .unwrap()
-                        );
-                        if i < 5 {
-                            header.push(
-                                Cell::new(header_value)
-                                    .fg(Color::DarkGreen)
-                                    .add_attribute(Attribute::Bold),
-                            );
-                        } else {
-                            header.push(Cell::new(header_value).fg(Color::DarkBlue));
-                        }
-
-                        let mut row_value_before_12: String = "".to_string();
-                        let mut row_value_after_12: String = "".to_string();
-                        if let Some(next_events) = event_dates.get_mut(&next_date.date_naive()) {
-                            next_events.sort_by(|a, b| {
-                                a.start
-                                    .as_ref()
-                                    .unwrap()
-                                    .date_time
-                                    .unwrap()
-                                    .cmp(&b.start.as_ref().unwrap().date_time.unwrap())
-                            });
-                            for next_event in next_events {
-                                let event_start =
-                                    next_event.start.as_ref().unwrap().date_time.unwrap();
-                                let event_end = next_event.end.as_ref().unwrap().date_time.unwrap();
-                                let summary = next_event.summary.as_ref().unwrap().to_string();
-                                let formatted_event = format!(
-                                    "{:02}:{:02} - {:02}:{:02}: {}\n\n",
-                                    tz.from_utc_datetime(&event_start.naive_local()).hour(),
-                                    event_start.minute(),
-                                    tz.from_utc_datetime(&event_end.naive_local()).hour(),
-                                    event_end.minute(),
-                                    summary
-                                );
-
-                                if event_start.hour() < 12 {
-                                    write!(row_value_before_12, "{}", formatted_event).unwrap();
-                                } else {
-                                    write!(row_value_after_12, "{}", formatted_event).unwrap();
-                                }
-                            }
-                        }
-                        row_before_12.push(row_value_before_12);
-                        row_after_12.push(row_value_after_12);
-                    }
-
-                    table
-                        .set_header(header)
-                        .add_row(row_before_12)
-                        .add_row(row_after_12)
-                        .set_content_arrangement(ContentArrangement::DynamicFullWidth);
-
-                    println!("{table}");
+                Ok((_, evs)) => {
+                    let raw_events: Vec<google_calendar3::api::Event> =
+                        evs.items.unwrap_or_default();
+                    util::render::render_list_smart(
+                        &raw_events,
+                        time_min,
+                        time_max,
+                        tz,
+                        layout_style,
+                        lineart,
+                    );
                 }
                 Err(e) => println!("Error retrieving events: {:?}", e),
             }

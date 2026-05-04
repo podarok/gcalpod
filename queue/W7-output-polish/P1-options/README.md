@@ -64,4 +64,5 @@ Pro: best per scenario. Con: two renderers to maintain.
 
 ## Result
 
-_Filled when owner picks._
+Owner picked **Option C** on 2026-05-04 ("С"). Hybrid renderer with
+`--style auto|grid|agenda` + `--lineart unicode|fancy|ascii`.

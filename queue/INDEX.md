@@ -59,6 +59,7 @@ within each section. Mark status next to each.
 | Research | done | [`W5-rtk-output/P0-research/README.md`](W5-rtk-output/P0-research/README.md) |
 | Options proposal (owner gate) | done — Option C picked | [`W5-rtk-output/P1-options-proposal/README.md`](W5-rtk-output/P1-options-proposal/README.md) |
 | Implement | step-1 done; step-2/3 pending | [`W5-rtk-output/P2-implement/README.md`](W5-rtk-output/P2-implement/README.md) |
+| Verbose flag | pending | [`W5-rtk-output/P3-verbose-flag/README.md`](W5-rtk-output/P3-verbose-flag/README.md) |
 
 ## Stable release v1.0.0 (W6)
 
@@ -74,8 +75,15 @@ within each section. Mark status next to each.
 | Phase | Status | Path |
 |---|---|---|
 | Research | done | [`W7-output-polish/P0-research/README.md`](W7-output-polish/P0-research/README.md) |
-| Options (owner gate) | pending | [`W7-output-polish/P1-options/README.md`](W7-output-polish/P1-options/README.md) |
-| Implement | blocked by P1 | [`W7-output-polish/P2-implement/README.md`](W7-output-polish/P2-implement/README.md) |
+| Options (owner gate) | done — Option C | [`W7-output-polish/P1-options/README.md`](W7-output-polish/P1-options/README.md) |
+| Implement | done | [`W7-output-polish/P2-implement/README.md`](W7-output-polish/P2-implement/README.md) |
+
+## Shared OAuth secret (W8) — required for v1.0.0
+
+| Phase | Status | Path |
+|---|---|---|
+| Design | done | [`W8-shared-secret/P0-design/README.md`](W8-shared-secret/P0-design/README.md) |
+| Implement | pending | [`W8-shared-secret/P1-implement/README.md`](W8-shared-secret/P1-implement/README.md) |
 
 ## Cross-cutting epics
 
@@ -101,3 +109,4 @@ within each section. Mark status next to each.
 | W5 | [`W5-rtk-output/README.md`](W5-rtk-output/README.md) | [`DECISIONS.md`](W5-rtk-output/DECISIONS.md) |
 | W6 | [`W6-stable-release/README.md`](W6-stable-release/README.md) | [`DECISIONS.md`](W6-stable-release/DECISIONS.md) |
 | W7 | [`W7-output-polish/README.md`](W7-output-polish/README.md) | [`DECISIONS.md`](W7-output-polish/DECISIONS.md) |
+| W8 | [`W8-shared-secret/README.md`](W8-shared-secret/README.md) | [`DECISIONS.md`](W8-shared-secret/DECISIONS.md) |

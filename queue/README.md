@@ -28,7 +28,10 @@ containing the plan. Each wave gates the next.
 | W2-polish | `remind`, formatter modes (conky / template), `clap_mangen` man page. | [`W2-polish/`](W2-polish/) |
 | W3-detach-rename | Detach fork + rename project + Apache 2.0 attribution. **DONE 2026-05-04** — repo is now `podarok/gcalpod`. | [`W3-detach-rename/`](W3-detach-rename/) |
 | W4-readme-refresh | Status-driven README rewrite reflecting actual code on main. **DONE.** | [`W4-readme-refresh/`](W4-readme-refresh/) |
-| W5-rtk-output | RTK token-killer output format for all commands + `--help`. **Owner gate at P1.** | [`W5-rtk-output/`](W5-rtk-output/) |
+| W5-rtk-output | RTK token-killer output format + `--verbose` learner mode. | [`W5-rtk-output/`](W5-rtk-output/) |
+| W6-stable-release | Cut v1.0.0 (changelog, version bump, pre-flight, tag). | [`W6-stable-release/`](W6-stable-release/) |
+| W7-output-polish | `gcal list` hybrid renderer (grid/agenda + lineart). **DONE.** | [`W7-output-polish/`](W7-output-polish/) |
+| W8-shared-secret | Shared OAuth secret across profiles. **Required for v1.0.0.** | [`W8-shared-secret/`](W8-shared-secret/) |
 
 ## Conventions
 
