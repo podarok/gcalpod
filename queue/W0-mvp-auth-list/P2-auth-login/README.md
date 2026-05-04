@@ -67,4 +67,21 @@ gcal auth login --profile headless --no-browser
 
 ## Result
 
+Implemented 2026-05-04 on `main`.
+
+- `src/commands/mod.rs` (new), `src/commands/auth/mod.rs` (new),
+  `src/commands/auth/login.rs` (new) — `LoginArgs { scopes, no_browser,
+  reauth }` + `run(profile, args)`.
+- `src/util/calendar.rs` — extracted `build_authenticator(profile, opts)`,
+  added `run_login_flow(profile, scopes, opts)`, added `AuthOptions
+  { no_browser }`, exposed `DEFAULT_SCOPES` const. `auth(profile)`
+  now delegates to `build_authenticator()`.
+- `src/main.rs` — registered `auth login` subcommand with `--scopes`,
+  `--no-browser`, `--reauth`. Dispatched before `calendar::auth()`
+  so login drives OAuth without stale hub.
+
+Smoke: `gcal auth login --help` lists all four flags including
+inherited global `--profile`. `--reauth` removes `store.json` first.
+`--no-browser` switches to `InstalledFlowReturnMethod::Interactive`.
+
 _Filled when phase closes._

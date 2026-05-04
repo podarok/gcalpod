@@ -86,15 +86,35 @@ fn build_secret(client_id: &str, client_secret: &str, project_id: Option<String>
     }
 }
 
-/// Authenticates the user with Google Calendar API and returns a CalendarHub instance.
+/// Default OAuth scopes — full Calendar read + write.
+pub const DEFAULT_SCOPES: &[&str] = &[
+    "https://www.googleapis.com/auth/calendar",
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.readonly",
+    "https://www.googleapis.com/auth/calendar.events.readonly",
+];
+
+/// Options for the OAuth installed flow used by `auth_with_options`.
+#[derive(Debug, Default, Clone)]
+pub struct AuthOptions {
+    /// If `true`, use `InstalledFlowReturnMethod::Interactive` (paste code).
+    /// Else use `HTTPRedirect` (default — opens browser to localhost).
+    pub no_browser: bool,
+}
+
+/// Build an authenticator for the given profile.
 ///
-/// Looks up OAuth credentials via `resolve_secret` for the given `profile`.
-/// Persists the token to `~/.gcal/profiles/<profile>/store.json`. Errors if
-/// no credentials configured. Set `GCAL_VERBOSE=1` to print the resolved
-/// source + profile on stderr.
-pub async fn auth(
+/// Resolves the secret, ensures the profile dir, returns a built
+/// `Authenticator` configured to persist tokens at the profile's
+/// `store.json`. Does NOT yet acquire a token (caller chooses
+/// scopes via `auth.token(scopes)`).
+async fn build_authenticator(
     profile: &Profile,
-) -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dyn Error>> {
+    opts: &AuthOptions,
+) -> Result<
+    yup_oauth2::authenticator::Authenticator<HttpsConnector<HttpConnector>>,
+    Box<dyn Error>,
+> {
     let (secret, source) = resolve_secret(profile).await?;
 
     if env::var("GCAL_VERBOSE").ok().as_deref() == Some("1") {
@@ -107,26 +127,49 @@ pub async fn auth(
         }
     }
 
-    let auth_builder = yup_oauth2::InstalledFlowAuthenticator::builder(
-        secret,
-        yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect,
-    );
+    let return_method = if opts.no_browser {
+        yup_oauth2::InstalledFlowReturnMethod::Interactive
+    } else {
+        yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect
+    };
 
     profile.ensure_dir()?;
     let store_path = profile.store_path();
-    let auth = auth_builder
+    let auth = yup_oauth2::InstalledFlowAuthenticator::builder(secret, return_method)
         .persist_tokens_to_disk(&store_path)
         .build()
         .await?;
+    Ok(auth)
+}
 
-    let scopes = &[
-        "https://www.googleapis.com/auth/calendar",
-        "https://www.googleapis.com/auth/calendar.events",
-        "https://www.googleapis.com/auth/calendar.readonly",
-        "https://www.googleapis.com/auth/calendar.events.readonly",
-    ];
+/// Run the OAuth installed flow for `profile` with explicit `scopes`.
+///
+/// Used by `gcal auth login` — does NOT build a `CalendarHub`. Returns
+/// once a valid token is cached at `profile.store_path()`.
+pub async fn run_login_flow(
+    profile: &Profile,
+    scopes: &[&str],
+    opts: &AuthOptions,
+) -> Result<(), Box<dyn Error>> {
+    let auth = build_authenticator(profile, opts).await?;
+    auth.token(scopes)
+        .await
+        .map_err(|e| anyhow::anyhow!("OAuth flow failed: {}", e))?;
+    Ok(())
+}
 
-    match auth.token(scopes).await {
+/// Authenticates the user with Google Calendar API and returns a CalendarHub instance.
+///
+/// Looks up OAuth credentials via `resolve_secret` for the given `profile`.
+/// Persists the token to `~/.gcal/profiles/<profile>/store.json`. Errors if
+/// no credentials configured. Set `GCAL_VERBOSE=1` to print the resolved
+/// source + profile on stderr.
+pub async fn auth(
+    profile: &Profile,
+) -> Result<CalendarHub<HttpsConnector<HttpConnector>>, Box<dyn Error>> {
+    let auth = build_authenticator(profile, &AuthOptions::default()).await?;
+
+    match auth.token(DEFAULT_SCOPES).await {
         Ok(_) => {}
         Err(e) => println!("Authentication error: {:?}", e),
     }

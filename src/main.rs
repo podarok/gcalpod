@@ -1,3 +1,4 @@
+mod commands;
 mod config;
 mod profile;
 mod util;
@@ -56,6 +57,36 @@ async fn main() {
                 .arg(Arg::new("date").help("Sets the event date").required(true)),
         )
         .subcommand(Command::new("list").about("Lists all events in Google Calendar"))
+        .subcommand(
+            Command::new("auth")
+                .about("Manage OAuth credentials per profile")
+                .subcommand_required(true)
+                .arg_required_else_help(true)
+                .subcommand(
+                    Command::new("login")
+                        .about("Authenticate the active profile (or --profile <name>)")
+                        .arg(
+                            Arg::new("scopes")
+                                .help("Comma-separated OAuth scope override (default: full Calendar read/write)")
+                                .long("scopes")
+                                .required(false),
+                        )
+                        .arg(
+                            Arg::new("no-browser")
+                                .help("Use paste-code flow instead of opening a browser")
+                                .long("no-browser")
+                                .action(ArgAction::SetTrue)
+                                .required(false),
+                        )
+                        .arg(
+                            Arg::new("reauth")
+                                .help("Force OAuth flow even if a cached token is valid")
+                                .long("reauth")
+                                .action(ArgAction::SetTrue)
+                                .required(false),
+                        ),
+                ),
+        )
         .get_matches();
 
     // Resolve active profile: --profile flag > GCAL_PROFILE env > config.toml > "default".
@@ -77,6 +108,28 @@ async fn main() {
     };
     if let Err(e) = prof.migrate_legacy_if_needed() {
         eprintln!("Warning: legacy migration failed - {}", e);
+    }
+
+    // Subcommands that don't need a CalendarHub run before auth().
+    if let Some(("auth", auth_m)) = matches.subcommand() {
+        match auth_m.subcommand() {
+            Some(("login", login_m)) => {
+                let args = commands::auth::login::LoginArgs {
+                    scopes: login_m.get_one::<String>("scopes").cloned(),
+                    no_browser: login_m.get_flag("no-browser"),
+                    reauth: login_m.get_flag("reauth"),
+                };
+                if let Err(e) = commands::auth::login::run(&prof, args).await {
+                    eprintln!("Error during login - {}", e);
+                    std::process::exit(1);
+                }
+                return;
+            }
+            _ => {
+                eprintln!("Unknown auth subcommand. Run `gcal auth --help`.");
+                std::process::exit(2);
+            }
+        }
     }
 
     let hub = match calendar::auth(&prof).await {
