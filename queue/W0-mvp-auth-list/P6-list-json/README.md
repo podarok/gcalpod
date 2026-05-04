@@ -123,4 +123,33 @@ gcal list --json           # alias for --format json
 
 ## Result
 
-_Filled when phase closes._
+Implemented 2026-05-04 on `main`.
+
+Files:
+- `src/util/format.rs` (new) — `OutputFormat { Table, Json, Tsv,
+  Csv, Raw }`, `ListEvent` v1 schema, `from_event(ev, cal_id, tz)`,
+  `render_list(fmt, &events, &raw_events)` dispatch.
+  TSV escapes tab/newline/CR/backslash. CSV via `csv::Writer`.
+  JSON pretty if stdout is tty (`std::io::IsTerminal`), compact
+  when piped. Raw = pretty-printed upstream `Vec<Event>` unchanged.
+- `src/main.rs` — extended `list` clap subcommand with
+  `--format <table|json|tsv|csv|raw>` (default `table`) and
+  `--json` (ergonomic alias, conflicts_with `--format`). Branch
+  before flat-list/table renderer when format != table.
+- `src/util/mod.rs` — register `format` module.
+- `Cargo.toml` — add `csv` dep.
+
+v1 ListEvent schema:
+`{id, calendar_id, summary, description, start, end, all_day,
+status, creator, attendees_count, html_link, updated}`. Datetimes
+are RFC3339 in user TZ (or `YYYY-MM-DD` for all-day). Bump on
+field rename/removal.
+
+TSV/CSV columns (10 fields, header row first):
+`id calendar_id summary start end all_day status creator
+attendees_count html_link`
+
+Smoke: `gcal list --help` shows `--format` with possible values
++ `--json` alias. Build clean.
+
+Validation deferred to live Calendar API run (next test cycle).

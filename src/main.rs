@@ -76,6 +76,22 @@ async fn main() {
                         .help("Calendar id (default: primary)")
                         .long("calendar")
                         .required(false),
+                )
+                .arg(
+                    Arg::new("format")
+                        .help("Output format: table | json | tsv | csv | raw")
+                        .long("format")
+                        .value_parser(["table", "json", "tsv", "csv", "raw"])
+                        .default_value("table")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("json")
+                        .help("Alias for --format json")
+                        .long("json")
+                        .action(ArgAction::SetTrue)
+                        .required(false)
+                        .conflicts_with("format"),
                 ),
         )
         .subcommand(
@@ -288,6 +304,23 @@ async fn main() {
             let use_flat_list = range_days > 14;
             let _ = default_to_utc;
 
+            // Resolve --format (or --json alias).
+            let format_str = if list_m.get_flag("json") {
+                "json"
+            } else {
+                list_m
+                    .get_one::<String>("format")
+                    .map(String::as_str)
+                    .unwrap_or("table")
+            };
+            let output_format = match util::format::OutputFormat::parse(format_str) {
+                Ok(f) => f,
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    return;
+                }
+            };
+
             let events = hub
                 .events()
                 .list(calendar_id)
@@ -296,6 +329,30 @@ async fn main() {
                 .single_events(true)
                 .doit()
                 .await;
+
+            // Non-table formats handled uniformly via util::format::render_list.
+            if output_format != util::format::OutputFormat::Table {
+                match events {
+                    Ok((_, evs)) => {
+                        let raw_events: Vec<google_calendar3::api::Event> =
+                            evs.items.unwrap_or_default();
+                        let list_events: Vec<util::format::ListEvent> = raw_events
+                            .iter()
+                            .map(|e| util::format::ListEvent::from_event(e, calendar_id, tz))
+                            .collect();
+                        if let Err(e) = util::format::render_list(
+                            output_format,
+                            &list_events,
+                            &raw_events,
+                        ) {
+                            eprintln!("Error rendering events: {}", e);
+                        }
+                    }
+                    Err(e) => eprintln!("Error retrieving events: {:?}", e),
+                }
+                return;
+            }
+
             if use_flat_list {
                 match events {
                     Ok((_, evs)) => {
