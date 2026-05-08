@@ -8,7 +8,11 @@ The project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
-- _next change goes here via PR_
+- `gcal quick --location <text>` (`-l`) and `--description <text>` (`-d`) flags:
+  set event location/description via post-create patch (single PATCH call when
+  both supplied). Mirrors existing `--conference` (`-c`) post-create pattern.
+  Fixes the gap where Google quick-add NL parser ignores these fields,
+  previously requiring a separate `gcal edit --field key=...` round-trip.
 
 ### Changed
 
