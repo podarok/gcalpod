@@ -87,6 +87,33 @@ Detailed walkthrough: [`docs/custom_auth.md`](docs/custom_auth.md).
 
 </details>
 
+## Creating events
+
+`gcal quick` parses natural-language date/time via Google's quick-add
+endpoint, then optionally patches in fields the NL parser drops on the
+floor:
+
+```sh
+gcal quick "team sync May 11 2026 3pm-4pm"
+
+gcal quick "client visit May 11 2026 3pm-4pm" \
+  --location "Kyiv, Khreschatyk 1" \
+  --description "Bring access badge. Confirm 1h before."
+
+gcal quick "design review tomorrow 2pm-3pm" --conference   # attaches Meet
+```
+
+Flags:
+
+- `-l` / `--location <text>` — set place (post-create patch).
+- `-d` / `--description <text>` — set notes (post-create patch).
+- `-c` / `--conference` — attach Google Meet (post-create patch).
+- `--calendar <id>` — target a non-primary calendar.
+
+Location and description share a single PATCH call when both supplied.
+For arbitrary field edits on an existing event use
+`gcal edit <id> --field key=value`.
+
 ## Commands
 
 <table>
