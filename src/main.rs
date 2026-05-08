@@ -250,6 +250,20 @@ fn build_cli() -> Command {
                         .short('c')
                         .action(ArgAction::SetTrue)
                         .required(false),
+                )
+                .arg(
+                    Arg::new("location")
+                        .help("Set event location (post-create patch)")
+                        .long("location")
+                        .short('l')
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("description")
+                        .help("Set event description (post-create patch)")
+                        .long("description")
+                        .short('d')
+                        .required(false),
                 ),
         )
         .subcommand(
@@ -550,12 +564,14 @@ async fn main() {
             .map(String::as_str)
             .unwrap_or("primary");
         let with_conf = m.get_flag("conference");
+        let location = m.get_one::<String>("location").cloned();
+        let description = m.get_one::<String>("description").cloned();
         match hub.events().quick_add(calendar_id, text).doit().await {
             Ok((_, event)) => {
                 let event_id = event.id.clone();
                 println!("Event created: {:?}", event.html_link.unwrap_or_default());
                 if with_conf {
-                    if let Some(eid) = event_id {
+                    if let Some(eid) = event_id.as_ref() {
                         let mut patch_event = Event::default();
                         patch_event.conference_data = Some(ConferenceData {
                             create_request: Some(CreateConferenceRequest {
@@ -569,13 +585,29 @@ async fn main() {
                         });
                         match hub
                             .events()
-                            .patch(patch_event, calendar_id, &eid)
+                            .patch(patch_event, calendar_id, eid)
                             .conference_data_version(1)
                             .doit()
                             .await
                         {
                             Ok((_, _)) => println!("Conference attached."),
                             Err(e) => eprintln!("Failed to attach conference: {:?}", e),
+                        }
+                    }
+                }
+                if location.is_some() || description.is_some() {
+                    if let Some(eid) = event_id.as_ref() {
+                        let mut patch_event = Event::default();
+                        patch_event.location = location;
+                        patch_event.description = description;
+                        match hub
+                            .events()
+                            .patch(patch_event, calendar_id, eid)
+                            .doit()
+                            .await
+                        {
+                            Ok((_, _)) => println!("Location/description set."),
+                            Err(e) => eprintln!("Failed to set location/description: {:?}", e),
                         }
                     }
                 }

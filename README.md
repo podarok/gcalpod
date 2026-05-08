@@ -103,7 +103,7 @@ Detailed walkthrough: [`docs/custom_auth.md`](docs/custom_auth.md).
     <tr><td><code>gcal list [--from --to --calendar --format --style --lineart]</code></td><td>Range query. Hybrid grid/agenda by default.</td></tr>
     <tr><td><code>gcal agenda</code> / <code>gcal search &lt;q&gt;</code></td><td>Flat list / full-text search.</td></tr>
     <tr><td><code>gcal calendars list</code></td><td>List accessible calendars.</td></tr>
-    <tr><td><code>gcal add</code> / <code>gcal quick &lt;text&gt;</code></td><td>Create events; <code>--conference</code> attaches Google Meet.</td></tr>
+    <tr><td><code>gcal add</code> / <code>gcal quick &lt;text&gt;</code></td><td>Create events; <code>--conference</code> attaches Google Meet, <code>--location</code>/<code>--description</code> set place/notes.</td></tr>
     <tr><td><code>gcal edit &lt;id&gt; --field key=value</code></td><td>Mutate fields: summary, description, location, start, end.</td></tr>
     <tr><td><code>gcal delete &lt;id&gt; [-y]</code></td><td>Delete with confirmation gate.</td></tr>
     <tr><td><code>gcal import &lt;path&gt; [--dry-run] [--skip-duplicates]</code></td><td>Bulk-insert ICS / VCAL.</td></tr>
