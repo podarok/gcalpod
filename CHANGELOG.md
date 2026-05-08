@@ -8,17 +8,32 @@ The project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## [1.1.0] — 2026-05-08
+
+### Added
+
 - `gcal quick --location <text>` (`-l`) and `--description <text>` (`-d`) flags:
   set event location/description via post-create patch (single PATCH call when
   both supplied). Mirrors existing `--conference` (`-c`) post-create pattern.
   Fixes the gap where Google quick-add NL parser ignores these fields,
   previously requiring a separate `gcal edit --field key=...` round-trip.
 
-### Changed
-
 ### Fixed
 
-### Removed
+- `--profile` flag accepted before subcommand (closes #4). Dropped
+  `args_conflicts_with_subcommands(true)` from root `Command` and the legacy
+  top-level positional `<title>`/`<date>` + `--conference` args (covered by
+  `gcal quick`). Bare `gcal add` now prints `--help`.
+- `gcal auth status` correctly labels secret source (closes #5). Resolution
+  chain mirrors `resolve_secret`: env → `GCAL_SECRET_FILE` → per-profile →
+  shared (with `shared.flag`) → legacy → `<missing>`. Shared mode renders as
+  `<path> (shared)`; plain legacy as `(legacy)`.
 
 ## [1.0.0] — 2026-05-04
 
