@@ -8,6 +8,16 @@ The project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## [1.2.0] — 2026-05-14
+
+### Added
+
 - `transparency` (Free/Busy) field support across mutation surfaces (closes #9):
   - `gcal edit <id> --field transparency=opaque|transparent` flips an existing
     event between Busy and Free without a web-UI round-trip.
@@ -18,13 +28,9 @@ The project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   - `gcal import` parses RFC 5545 `TRANSP:TRANSPARENT` / `TRANSP:OPAQUE` from
     ICS source and forwards to `event.transparency`.
   - `ListEvent` v1 schema gains a `transparency` field; surfaced in `--format
-    json`, `tsv`, `csv`. Table renderer unchanged.
-
-### Changed
-
-### Fixed
-
-### Removed
+    json`, `tsv`, `csv`. Table renderer unchanged. TSV / CSV column count
+    grows from 10 to 11 — consumers that parse by fixed column index keep
+    working; consumers that hard-code count must update.
 
 ## [1.1.0] — 2026-05-08
 
