@@ -108,11 +108,19 @@ Flags:
 - `-l` / `--location <text>` — set place (post-create patch).
 - `-d` / `--description <text>` — set notes (post-create patch).
 - `-c` / `--conference` — attach Google Meet (post-create patch).
+- `--transparency opaque|transparent` — Free/Busy flag (post-create patch).
+  `opaque` (default) blocks the time; `transparent` marks the event Free so
+  it does not clash with overlapping slots.
 - `--calendar <id>` — target a non-primary calendar.
 
-Location and description share a single PATCH call when both supplied.
-For arbitrary field edits on an existing event use
-`gcal edit <id> --field key=value`.
+Location, description, and transparency share a single PATCH call when
+multiple are supplied. For arbitrary field edits on an existing event use
+`gcal edit <id> --field key=value` — supported keys: `summary`,
+`description`, `location`, `start`, `end`, `transparency`.
+
+`gcal add <title> <date>` accepts `--transparency` directly at insert time
+(no patch round-trip). `gcal import` honours RFC 5545 `TRANSP:TRANSPARENT`
+on ICS input.
 
 ## Commands
 

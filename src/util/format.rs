@@ -49,6 +49,8 @@ pub struct ListEvent {
     pub attendees_count: usize,
     pub html_link: Option<String>,
     pub updated: Option<String>,
+    /// Free/Busy flag from Google Calendar: "opaque" (busy, default) or "transparent" (free).
+    pub transparency: Option<String>,
 }
 
 impl ListEvent {
@@ -69,6 +71,7 @@ impl ListEvent {
             attendees_count,
             html_link: ev.html_link.clone(),
             updated: ev.updated.map(|t| t.to_rfc3339()),
+            transparency: ev.transparency.clone(),
         }
     }
 }
@@ -105,6 +108,7 @@ const COLUMNS: &[&str] = &[
     "creator",
     "attendees_count",
     "html_link",
+    "transparency",
 ];
 
 fn cell(s: Option<&str>) -> String {
@@ -187,6 +191,7 @@ fn render_tsv(events: &[ListEvent]) -> Result<(), Box<dyn Error>> {
             cell(e.creator.as_deref()),
             e.attendees_count.to_string(),
             cell(e.html_link.as_deref()),
+            cell(e.transparency.as_deref()),
         ];
         let escaped: Vec<String> = row.iter().map(|s| tsv_escape(s)).collect();
         writeln!(out, "{}", escaped.join("\t"))?;
@@ -212,6 +217,7 @@ fn render_csv(events: &[ListEvent]) -> Result<(), Box<dyn Error>> {
             cell(e.creator.as_deref()).as_str(),
             e.attendees_count.to_string().as_str(),
             cell(e.html_link.as_deref()).as_str(),
+            cell(e.transparency.as_deref()).as_str(),
         ])?;
     }
     wtr.flush()?;
@@ -261,7 +267,7 @@ mod tests {
     #[test]
     fn columns_count_matches_render_rows() {
         // Sanity: TSV/CSV header + body must agree on column count.
-        assert_eq!(COLUMNS.len(), 10);
+        assert_eq!(COLUMNS.len(), 11);
     }
 
     #[test]
@@ -279,11 +285,13 @@ mod tests {
             attendees_count: 2,
             html_link: Some("https://example.com".into()),
             updated: None,
+            transparency: Some("transparent".into()),
         };
         let s = serde_json::to_string(&ev).unwrap();
         assert!(s.contains(r#""id":"abc""#));
         assert!(s.contains(r#""calendar_id":"primary""#));
         assert!(s.contains(r#""attendees_count":2"#));
         assert!(s.contains(r#""all_day":false"#));
+        assert!(s.contains(r#""transparency":"transparent""#));
     }
 }

@@ -8,6 +8,18 @@ The project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- `transparency` (Free/Busy) field support across mutation surfaces (closes #9):
+  - `gcal edit <id> --field transparency=opaque|transparent` flips an existing
+    event between Busy and Free without a web-UI round-trip.
+  - `gcal add <title> <date> --transparency opaque|transparent` sets the flag
+    at insert time.
+  - `gcal quick <text> --transparency opaque|transparent` applies the flag via
+    the same post-create patch path as `--location` / `--description`.
+  - `gcal import` parses RFC 5545 `TRANSP:TRANSPARENT` / `TRANSP:OPAQUE` from
+    ICS source and forwards to `event.transparency`.
+  - `ListEvent` v1 schema gains a `transparency` field; surfaced in `--format
+    json`, `tsv`, `csv`. Table renderer unchanged.
+
 ### Changed
 
 ### Fixed
