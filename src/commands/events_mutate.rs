@@ -28,7 +28,7 @@ pub async fn edit(
 ) -> Result<(), Box<dyn Error>> {
     if args.fields.is_empty() {
         return Err(
-            "no --field <key=value> provided. Supported keys: summary, description, location, start, end."
+            "no --field <key=value> provided. Supported keys: summary, description, location, start, end, transparency."
                 .into(),
         );
     }
@@ -60,9 +60,19 @@ pub async fn edit(
                     ..Default::default()
                 });
             }
+            "transparency" => match value.as_str() {
+                "opaque" | "transparent" => event.transparency = Some(value.clone()),
+                other => {
+                    return Err(format!(
+                        "--field transparency: expected 'opaque' or 'transparent', got '{}'",
+                        other
+                    )
+                    .into());
+                }
+            },
             other => {
                 return Err(format!(
-                    "unsupported --field key '{}'. Supported: summary, description, location, start, end.",
+                    "unsupported --field key '{}'. Supported: summary, description, location, start, end, transparency.",
                     other
                 )
                 .into());

@@ -48,7 +48,14 @@ fn build_cli() -> Command {
                         .help("Sets the event title")
                         .required(true),
                 )
-                .arg(Arg::new("date").help("Sets the event date").required(true)),
+                .arg(Arg::new("date").help("Sets the event date").required(true))
+                .arg(
+                    Arg::new("transparency")
+                        .help("Free/Busy flag: opaque (busy, default) | transparent (free)")
+                        .long("transparency")
+                        .value_parser(["opaque", "transparent"])
+                        .required(false),
+                ),
         )
         .subcommand(
             Command::new("list")
@@ -264,6 +271,13 @@ fn build_cli() -> Command {
                         .long("description")
                         .short('d')
                         .required(false),
+                )
+                .arg(
+                    Arg::new("transparency")
+                        .help("Free/Busy flag (post-create patch): opaque (busy) | transparent (free)")
+                        .long("transparency")
+                        .value_parser(["opaque", "transparent"])
+                        .required(false),
                 ),
         )
         .subcommand(
@@ -292,7 +306,7 @@ fn build_cli() -> Command {
                 .arg(
                     Arg::new("field")
                         .long("field")
-                        .help("key=value (repeatable). Keys: summary, description, location, start, end")
+                        .help("key=value (repeatable). Keys: summary, description, location, start, end, transparency")
                         .action(ArgAction::Append)
                         .required(false),
                 ),
@@ -566,6 +580,7 @@ async fn main() {
         let with_conf = m.get_flag("conference");
         let location = m.get_one::<String>("location").cloned();
         let description = m.get_one::<String>("description").cloned();
+        let transparency = m.get_one::<String>("transparency").cloned();
         match hub.events().quick_add(calendar_id, text).doit().await {
             Ok((_, event)) => {
                 let event_id = event.id.clone();
@@ -595,19 +610,20 @@ async fn main() {
                         }
                     }
                 }
-                if location.is_some() || description.is_some() {
+                if location.is_some() || description.is_some() || transparency.is_some() {
                     if let Some(eid) = event_id.as_ref() {
                         let mut patch_event = Event::default();
                         patch_event.location = location;
                         patch_event.description = description;
+                        patch_event.transparency = transparency;
                         match hub
                             .events()
                             .patch(patch_event, calendar_id, eid)
                             .doit()
                             .await
                         {
-                            Ok((_, _)) => println!("Location/description set."),
-                            Err(e) => eprintln!("Failed to set location/description: {:?}", e),
+                            Ok((_, _)) => println!("Post-create fields applied."),
+                            Err(e) => eprintln!("Failed to apply post-create fields: {:?}", e),
                         }
                     }
                 }
@@ -954,9 +970,11 @@ async fn main() {
                 .map(String::as_str)
                 .unwrap();
             let date = add_m.get_one::<String>("date").map(String::as_str).unwrap();
+            let transparency = add_m.get_one::<String>("transparency").cloned();
             let event_date_with_timezone = get_date_from_string(tz, &date.to_string());
             let mut event = Event {
                 summary: Some(title.to_string()),
+                transparency,
                 start: Some(EventDateTime {
                     date_time: Some(event_date_with_timezone),
                     ..Default::default()

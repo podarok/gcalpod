@@ -33,6 +33,7 @@ pub async fn run(
             let mut description = None;
             let mut location = None;
             let mut uid = None;
+            let mut transparency = None;
             let mut dtstart: Option<EventDateTime> = None;
             let mut dtend: Option<EventDateTime> = None;
             for prop in vev.properties {
@@ -42,6 +43,15 @@ pub async fn run(
                     "DESCRIPTION" => description = Some(val),
                     "LOCATION" => location = Some(val),
                     "UID" => uid = Some(val),
+                    "TRANSP" => {
+                        // RFC 5545 TRANSP: OPAQUE (default, busy) | TRANSPARENT (free).
+                        // Google Calendar API expects lowercase.
+                        transparency = match val.trim().to_ascii_uppercase().as_str() {
+                            "TRANSPARENT" => Some("transparent".to_string()),
+                            "OPAQUE" => Some("opaque".to_string()),
+                            _ => None,
+                        };
+                    }
                     "DTSTART" => dtstart = Some(parse_dt_property(&val, args.tz)?),
                     "DTEND" => dtend = Some(parse_dt_property(&val, args.tz)?),
                     _ => {}
@@ -51,6 +61,7 @@ pub async fn run(
                 summary,
                 description,
                 location,
+                transparency,
                 start: dtstart,
                 end: dtend,
                 ..Default::default()
